@@ -39,4 +39,7 @@ public class Company {
 
     @OneToMany(mappedBy = "company")
     private Set<Reward> rewards = new HashSet<>();
+
+    @OneToMany(mappedBy = "company")
+    private Set<Sale> sales = new HashSet<>();
 }
