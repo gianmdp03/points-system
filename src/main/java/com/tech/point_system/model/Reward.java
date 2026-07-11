@@ -8,8 +8,6 @@ import lombok.*;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Reward {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,6 +15,9 @@ public class Reward {
 
     @Column(nullable = false)
     private String name;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     @Column(name = "points_to_earn")
     private Integer pointsToEarn;
