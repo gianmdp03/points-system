@@ -1,4 +1,6 @@
 package com.tech.point_system.dto.product;
 
-public record ProductListDTO() {
+import java.math.BigDecimal;
+
+public record ProductListDTO(Long id, String name, String description, BigDecimal price, String image) {
 }
