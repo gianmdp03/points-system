@@ -1,9 +1,12 @@
 package com.tech.point_system.model;
 
+import com.tech.point_system.extra.CompanyDetails;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -21,17 +24,19 @@ public class Company {
     @Column(nullable = false)
     private String name;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    private CompanyDetails companyDetails;
     //private User admin;
 
     @OneToMany(mappedBy = "company")
-    private Set<PointsAccount> pointsAccount = new HashSet<>();
+    private Set<PointsAccount> pointsAccounts = new HashSet<>();
 
     @OneToMany(mappedBy = "company")
-    private Set<Product> product = new HashSet<>();
+    private Set<Product> products = new HashSet<>();
 
     @OneToMany(mappedBy = "company")
-    private Set<Promotion> promotion = new HashSet<>();
+    private Set<Promotion> promotions = new HashSet<>();
 
     @OneToMany(mappedBy = "company")
-    private Set<Reward> reward = new HashSet<>();
+    private Set<Reward> rewards = new HashSet<>();
 }
