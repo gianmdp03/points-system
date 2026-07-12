@@ -7,15 +7,19 @@ import com.tech.point_system.dto.promotion.PromotionUpdateDTO;
 import com.tech.point_system.model.Promotion;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
-public abstract class PromotionMapper {
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "company", ignore = true)
-    public abstract Promotion toEntity(PromotionRequestDTO dto);
-    public abstract PromotionDetailDTO toDetailDTO(Promotion entity);
-    public abstract PromotionListDTO toListDTO(Promotion entity);
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "company", ignore = true)
-    public abstract void updateEntityFromDTO(PromotionUpdateDTO dto, @MappingTarget Promotion entity);
+@Mapper(
+    config = GlobalMapperConfig.class,
+    uses = {CompanyMapper.class})
+public interface PromotionMapper {
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "company", ignore = true)
+  Promotion toEntity(PromotionRequestDTO dto);
+
+  PromotionDetailDTO toDetailDTO(Promotion entity);
+
+  PromotionListDTO toListDTO(Promotion entity);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "company", ignore = true)
+  void updateEntityFromDTO(PromotionUpdateDTO dto, @MappingTarget Promotion entity);
 }

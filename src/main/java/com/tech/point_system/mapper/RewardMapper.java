@@ -7,15 +7,14 @@ import com.tech.point_system.dto.reward.RewardUpdateDTO;
 import com.tech.point_system.model.Reward;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
-public abstract class RewardMapper {
+@Mapper(config = GlobalMapperConfig.class, uses = {CompanyMapper.class})
+public interface RewardMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "company", ignore = true)
-    public abstract Reward toEntity(RewardRequestDTO dto);
-    public abstract RewardDetailDTO toDetailDTO(Reward entity);
-    public abstract RewardListDTO toListDTO(Reward entity);
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    Reward toEntity(RewardRequestDTO dto);
+    RewardDetailDTO toDetailDTO(Reward entity);
+    RewardListDTO toListDTO(Reward entity);
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "company", ignore = true)
-    public abstract void updateEntityFromDTO(RewardUpdateDTO dto, @MappingTarget Reward entity);
+    void updateEntityFromDTO(RewardUpdateDTO dto, @MappingTarget Reward entity);
 }

@@ -1,4 +1,4 @@
 package com.tech.point_system.mapper;
 
-public abstract class NotificationMapper {
+public interface NotificationMapper {
 }

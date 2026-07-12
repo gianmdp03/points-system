@@ -7,16 +7,15 @@ import com.tech.point_system.dto.product.ProductUpdateDTO;
 import com.tech.point_system.model.Product;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
-public abstract class ProductMapper {
+@Mapper(config = GlobalMapperConfig.class, uses = {CompanyMapper.class})
+public interface ProductMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "company", ignore = true)
-    public abstract Product toEntity(ProductRequestDTO dto);
-    public abstract ProductDetailDTO toDetailDTO(Product entity);
-    public abstract ProductListDTO toListDTO(Product entity);
+    Product toEntity(ProductRequestDTO dto);
+    ProductDetailDTO toDetailDTO(Product entity);
+    ProductListDTO toListDTO(Product entity);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "company", ignore = true)
-    public abstract void updateEntityFromDTO(ProductUpdateDTO dto, @MappingTarget Product entity);
+    void updateEntityFromDTO(ProductUpdateDTO dto, @MappingTarget Product entity);
 }
