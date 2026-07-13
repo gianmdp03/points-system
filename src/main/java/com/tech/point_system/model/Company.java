@@ -26,7 +26,8 @@ public class Company {
 
     @JdbcTypeCode(SqlTypes.JSON)
     private CompanyDetails companyDetails;
-    //private User admin;
+
+    //private User admin ManyToOne, el usuario entra y elije sus companias
 
     @OneToMany(mappedBy = "company")
     private Set<PointsAccount> pointsAccounts = new HashSet<>();
