@@ -1,6 +1,7 @@
 package com.tech.point_system.model;
 
 import com.tech.point_system.extra.CompanyDetails;
+import com.tech.point_system.security.user.model.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +28,9 @@ public class Company {
     @JdbcTypeCode(SqlTypes.JSON)
     private CompanyDetails companyDetails;
 
-    //private User admin ManyToOne, el usuario entra y elije sus companias
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User admin;
 
     @OneToMany(mappedBy = "company")
     private Set<PointsAccount> pointsAccounts = new HashSet<>();

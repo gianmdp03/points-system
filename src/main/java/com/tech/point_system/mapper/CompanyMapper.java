@@ -1,6 +1,7 @@
 package com.tech.point_system.mapper;
 
 import com.tech.point_system.dto.company.CompanyDetailDTO;
+import com.tech.point_system.dto.company.CompanyListDTO;
 import com.tech.point_system.dto.company.CompanyRequestDTO;
 import com.tech.point_system.dto.company.CompanyUpdateDTO;
 import com.tech.point_system.model.Company;
@@ -16,7 +17,7 @@ public interface CompanyMapper {
     @Mapping(target = "sales", ignore = true)
     Company toEntity(CompanyRequestDTO dto);
     CompanyDetailDTO toDetailDTO(Company entity);
-    Company toListDTO(Company entity);
+    CompanyListDTO toListDTO(Company entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "pointsAccounts", ignore = true)
