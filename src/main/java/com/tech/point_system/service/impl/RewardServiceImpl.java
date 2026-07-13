@@ -1,4 +1,67 @@
 package com.tech.point_system.service.impl;
 
-public class RewardServiceImpl {
+import com.tech.point_system.dto.reward.RewardDetailDTO;
+import com.tech.point_system.dto.reward.RewardRequestDTO;
+import com.tech.point_system.dto.reward.RewardUpdateDTO;
+import com.tech.point_system.exception.NotFoundException;
+import com.tech.point_system.mapper.RewardMapper;
+import com.tech.point_system.model.Company;
+import com.tech.point_system.model.Reward;
+import com.tech.point_system.repository.CompanyRepository;
+import com.tech.point_system.repository.RewardRepository;
+import com.tech.point_system.service.RewardService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Transactional(readOnly = true)
+@RequiredArgsConstructor
+public class RewardServiceImpl implements RewardService {
+
+    private final RewardRepository rewardRepository;
+    private final CompanyRepository companyRepository;
+    private final RewardMapper rewardMapper;
+
+    @Override
+    public RewardDetailDTO addReward(RewardRequestDTO dto) {
+        Company company = companyRepository.findById(dto.companyId())
+                .orElseThrow(() -> new NotFoundException("El comercio no existe."));
+
+        Reward reward = rewardMapper.toEntity(dto);
+
+        reward.setCompany(company);
+
+        Reward savedReward = rewardRepository.save(reward);
+
+        return rewardMapper.toDetailDTO(savedReward);
+    }
+
+    @Override
+    public RewardDetailDTO updateReward(Long id, RewardUpdateDTO dto) {
+        Reward reward = rewardRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Premio no encontrado."));
+
+        rewardMapper.updateEntityFromDTO(dto, reward);
+
+        Reward updatedReward = rewardRepository.save(reward);
+
+        return rewardMapper.toDetailDTO(updatedReward);
+    }
+
+    @Override
+    public RewardDetailDTO getReward(Long id) {
+        Reward reward = rewardRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Premio no encontrado."));
+
+        return rewardMapper.toDetailDTO(reward);
+    }
+
+    @Override
+    public void deleteReward(Long id) {
+        if (!rewardRepository.existsById(id)) {
+            throw new NotFoundException("Premio no encontrado.");
+        }
+        rewardRepository.deleteById(id);
+    }
 }
