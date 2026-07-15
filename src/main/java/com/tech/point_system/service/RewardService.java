@@ -9,6 +9,6 @@ import com.tech.point_system.dto.reward.RewardUpdateDTO;
 public interface RewardService {
     RewardDetailDTO addReward(RewardRequestDTO dto);
     RewardDetailDTO updateReward(Long id, RewardUpdateDTO dto);
-    RewardDetailDTO getReward(Long id);
+    RewardDetailDTO getRewardById(Long id);
     void deleteReward(Long id);
 }

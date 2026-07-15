@@ -30,7 +30,6 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = productMapper.toEntity(dto);
 
-
         product.setCompany(company);
 
         Product savedProduct = productRepository.save(product);
@@ -52,7 +51,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDetailDTO getProduct(Long id) {
+    public ProductDetailDTO getProductById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Producto no encontrado."));
 

@@ -7,6 +7,6 @@ import com.tech.point_system.dto.product.ProductUpdateDTO;
 public interface ProductService {
     ProductDetailDTO addProduct(ProductRequestDTO dto);
     ProductDetailDTO updateProduct(Long id, ProductUpdateDTO dto);
-    ProductDetailDTO getProduct(Long id);
+    ProductDetailDTO getProductById(Long id);
     void deleteProduct(Long id);
 }

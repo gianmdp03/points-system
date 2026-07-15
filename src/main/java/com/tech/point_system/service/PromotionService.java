@@ -7,6 +7,6 @@ import com.tech.point_system.dto.promotion.PromotionUpdateDTO;
 public interface PromotionService {
     PromotionDetailDTO addPromotion(PromotionRequestDTO dto);
     PromotionDetailDTO updatePromotion(Long id, PromotionUpdateDTO dto);
-    PromotionDetailDTO getPromotion(Long id);
+    PromotionDetailDTO getPromotionById(Long id);
     void deletePromotion(Long id);
 }

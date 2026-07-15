@@ -50,7 +50,7 @@ public class PromotionServiceImpl implements PromotionService {
     }
 
     @Override
-    public PromotionDetailDTO getPromotion(Long id) {
+    public PromotionDetailDTO getPromotionById(Long id) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promoción no encontrada."));
 

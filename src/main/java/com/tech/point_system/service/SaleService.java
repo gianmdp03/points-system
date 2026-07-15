@@ -6,6 +6,6 @@ import com.tech.point_system.dto.sale.SaleRequestDTO;
 public interface SaleService {
     SaleDetailDTO addSale(SaleRequestDTO dto);
     SaleDetailDTO updateSale(Long id, SaleRequestDTO dto);
-    SaleDetailDTO getSale(Long id);
+    SaleDetailDTO getSaleById(Long id);
     void deleteSale(Long id);
 }
