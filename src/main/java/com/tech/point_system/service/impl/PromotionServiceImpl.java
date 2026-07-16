@@ -1,6 +1,7 @@
 package com.tech.point_system.service.impl;
 
 import com.tech.point_system.dto.promotion.PromotionDetailDTO;
+import com.tech.point_system.dto.promotion.PromotionListDTO;
 import com.tech.point_system.dto.promotion.PromotionRequestDTO;
 import com.tech.point_system.dto.promotion.PromotionUpdateDTO;
 import com.tech.point_system.exception.NotFoundException;
@@ -11,6 +12,8 @@ import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.PromotionRepository;
 import com.tech.point_system.service.PromotionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +30,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Transactional
     public PromotionDetailDTO addPromotion(PromotionRequestDTO dto) {
         Company company = companyRepository.findById(dto.companyId())
-                .orElseThrow(() -> new NotFoundException("El comercio no existe."));
+                .orElseThrow(() -> new NotFoundException("Company not found"));
 
         Promotion promotion = promotionMapper.toEntity(dto);
 
@@ -42,7 +45,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Transactional
     public PromotionDetailDTO updatePromotion(Long id, PromotionUpdateDTO dto) {
         Promotion promotion = promotionRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Promoción no encontrada."));
+                .orElseThrow(() -> new NotFoundException("Promotion not found"));
 
         promotionMapper.updateEntityFromDTO(dto, promotion);
 
@@ -52,9 +55,18 @@ public class PromotionServiceImpl implements PromotionService {
     }
 
     @Override
+    public Page<PromotionListDTO> listPromotions(Long companyId, Pageable pageable){
+        Page<Promotion> promotions = promotionRepository.findByCompanyId(companyId, pageable);
+        if(promotions.isEmpty()){
+            return Page.empty();
+        }
+        return promotions.map(promotionMapper::toListDTO);
+    }
+
+    @Override
     public PromotionDetailDTO getPromotionById(Long id) {
         Promotion promotion = promotionRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Promoción no encontrada."));
+                .orElseThrow(() -> new NotFoundException("Promotion not found"));
 
         return promotionMapper.toDetailDTO(promotion);
     }
@@ -63,7 +75,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Transactional
     public void deletePromotion(Long id) {
         if (!promotionRepository.existsById(id)) {
-            throw new NotFoundException("Promoción no encontrada.");
+            throw new NotFoundException("Promotion not found");
         }
         promotionRepository.deleteById(id);
     }
