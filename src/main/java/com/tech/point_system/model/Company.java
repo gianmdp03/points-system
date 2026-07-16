@@ -9,6 +9,8 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,6 +33,11 @@ public class Company {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User admin;
+
+    @Column(nullable = false)
+    private boolean isEnabled = true;  //PONER TASK CON UN METODO QUE BUSCA COMPANIES MARCADAS PARA ELIMINACION 30 DIAS DESPUES.
+
+    private LocalDate disabledDate;
 
     @OneToMany(mappedBy = "company")
     private Set<PointsAccount> pointsAccounts = new HashSet<>();
