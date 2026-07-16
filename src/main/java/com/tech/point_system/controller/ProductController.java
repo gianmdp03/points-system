@@ -18,22 +18,20 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN'")
 public class ProductController {
     private final ProductService productService;
 
-    @PreAuthorize("hasRole('APP_ADMIN')")
     @PostMapping
     public ResponseEntity<ProductDetailDTO> addProduct(@Valid @RequestBody ProductRequestDTO dto){
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.addProduct(dto));
     }
 
-    @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN' , 'USER')")
     @GetMapping("/{companyId}")
     public ResponseEntity<Page<ProductListDTO>> listProducts(@PathVariable Long companyId, @PageableDefault(page = 0, size = 12)Pageable pageable){
         return ResponseEntity.ok(productService.listProducts(companyId, pageable));
     }
 
-    @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN'")
     @PutMapping("/{id}")
     public ResponseEntity<ProductDetailDTO> updateProduct(@PathVariable Long id, @RequestBody ProductUpdateDTO dto){
         return ResponseEntity.ok(productService.updateProduct(id, dto));
