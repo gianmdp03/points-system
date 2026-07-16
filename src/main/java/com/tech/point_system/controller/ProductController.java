@@ -29,7 +29,7 @@ public class ProductController {
 
     @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN' , 'USER')")
     @GetMapping("/{companyId}")
-    public ResponseEntity<Page<ProductListDTO>> listProducts(@PathVariable Long companyId, @PageableDefault(page = 0, size = 12)Pageable pageable){
+    public ResponseEntity<Page<ProductListDTO>> listProducts(@PathVariable Long companyId, @PageableDefault(page = 0, size = 12) Pageable pageable){
         return ResponseEntity.ok(productService.listProducts(companyId, pageable));
     }
 
