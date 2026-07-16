@@ -24,6 +24,7 @@ public class PromotionServiceImpl implements PromotionService {
     private final PromotionMapper promotionMapper;
 
     @Override
+    @Transactional
     public PromotionDetailDTO addPromotion(PromotionRequestDTO dto) {
         Company company = companyRepository.findById(dto.companyId())
                 .orElseThrow(() -> new NotFoundException("El comercio no existe."));
@@ -38,6 +39,7 @@ public class PromotionServiceImpl implements PromotionService {
     }
 
     @Override
+    @Transactional
     public PromotionDetailDTO updatePromotion(Long id, PromotionUpdateDTO dto) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promoción no encontrada."));
@@ -58,6 +60,7 @@ public class PromotionServiceImpl implements PromotionService {
     }
 
     @Override
+    @Transactional
     public void deletePromotion(Long id) {
         if (!promotionRepository.existsById(id)) {
             throw new NotFoundException("Promoción no encontrada.");
