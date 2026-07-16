@@ -3,6 +3,7 @@ package com.tech.point_system.controller;
 import com.tech.point_system.dto.product.ProductDetailDTO;
 import com.tech.point_system.dto.product.ProductListDTO;
 import com.tech.point_system.dto.product.ProductRequestDTO;
+import com.tech.point_system.dto.product.ProductUpdateDTO;
 import com.tech.point_system.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,12 @@ public class ProductController {
     @GetMapping("/{companyId}")
     public ResponseEntity<Page<ProductListDTO>> listProducts(@PathVariable Long companyId, @PageableDefault(page = 0, size = 12)Pageable pageable){
         return ResponseEntity.ok(productService.listProducts(companyId, pageable));
+    }
+
+    @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN'")
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductDetailDTO> updateProduct(@PathVariable Long id, @RequestBody ProductUpdateDTO dto){
+        return ResponseEntity.ok(productService.updateProduct(id, dto));
     }
 
     @GetMapping("/{id}")
