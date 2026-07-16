@@ -40,12 +40,12 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDetailDTO> getPropertyById(@PathVariable Long id) {
+    public ResponseEntity<ProductDetailDTO> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProperty(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
