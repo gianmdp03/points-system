@@ -26,10 +26,10 @@ public class SaleServiceImpl implements SaleService {
 
   @Override
   @Transactional
-  public SaleDetailDTO addSale(Long companyId, SaleRequestDTO dto) {
+  public SaleDetailDTO addSale(SaleRequestDTO dto) {
     Company company =
         companyRepository
-            .findById(companyId)
+            .findById(dto.companyId())
             .orElseThrow(() -> new NotFoundException("Company ID not found!"));
       Sale sale = mapper.toEntity(dto);
       sale.setCompany(company);

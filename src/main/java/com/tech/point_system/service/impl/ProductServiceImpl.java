@@ -31,6 +31,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
 
     @Override
+    @Transactional
     public ProductDetailDTO addProduct(ProductRequestDTO dto) {
         Company company = companyRepository.findById(dto.companyId())
                 .orElseThrow(() -> new NotFoundException("El comercio no existe."));
@@ -56,6 +57,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public ProductDetailDTO updateProduct(Long id, ProductUpdateDTO dto) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Producto no encontrado."));
@@ -77,6 +79,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
             throw new NotFoundException("Producto no encontrado.");
