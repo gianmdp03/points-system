@@ -15,7 +15,6 @@ import com.tech.point_system.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,16 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductServiceImpl implements ProductService {
   private final CompanyAccessValidator companyAccessValidator;
   private final ProductRepository productRepository;
-  private final CompanyRepository companyRepository;
   private final ProductMapper productMapper;
 
   @Override
   @Transactional
-  public ProductDetailDTO addProduct(ProductRequestDTO dto) {
-    Company company =
-        companyRepository
-            .findById(dto.companyId())
-            .orElseThrow(() -> new NotFoundException("Company Not Found"));
+  public ProductDetailDTO addProduct(String companyAdminId, ProductRequestDTO dto) {
+    Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
 
     Product product = productMapper.toEntity(dto);
 
@@ -59,7 +54,8 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   @Transactional
-  public ProductDetailDTO updateProduct(Long id, ProductUpdateDTO dto) {
+  public ProductDetailDTO updateProduct(String companyAdminId, Long companyId, Long id, ProductUpdateDTO dto) {
+    companyAccessValidator.validateAccess(companyId, companyAdminId);
     Product product =
         productRepository
             .findById(id)
@@ -73,26 +69,21 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public ProductDetailDTO getProductById(Long id) {
+  public ProductDetailDTO getProductById(String companyAdminId, Long id) {
     Product product =
         productRepository
             .findById(id)
             .orElseThrow(() -> new NotFoundException("Product not found"));
+
+    companyAccessValidator.validateAccess(product.getCompany().getId(), companyAdminId);
 
     return productMapper.toDetailDTO(product);
   }
 
   @Override
   @Transactional
-  public void deleteProduct(String companyAdminId, Long id) {
-    Product product =
-        productRepository
-            .findById(id)
-            .orElseThrow(() -> new NotFoundException("Product not found"));
-    if (product.getCompany().getAdmin().getId().equals(companyAdminId)) {
-      productRepository.delete(product);
-    } else {
-      throw new AccessDeniedException("Access Denied");
-    }
+  public void deleteProduct(String companyAdminId, Long companyId, Long id) {
+    companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+    productRepository.deleteById(id);
   }
 }

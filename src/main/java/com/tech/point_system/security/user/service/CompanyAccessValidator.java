@@ -41,7 +41,7 @@ public class CompanyAccessValidator {
 
         return company;
     }
-    
+
     public void checkAccessOnly(Long companyId, String userId) {
         validateAccess(companyId, userId);
     }
