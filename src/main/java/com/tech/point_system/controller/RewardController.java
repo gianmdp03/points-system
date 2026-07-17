@@ -37,7 +37,6 @@ public class RewardController {
     @GetMapping("/{companyId)")
     public ResponseEntity<Page<RewardListDTO>> listRewards(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PageableDefault(page = 0, size = 12)Pageable pageable){
         return ResponseEntity.ok(rewardService.listRewards(jwt.getSubject(), companyId, pageable));
-
     }
 
     @GetMapping("/{companyId}/{id}")
