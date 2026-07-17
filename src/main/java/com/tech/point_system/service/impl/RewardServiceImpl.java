@@ -24,7 +24,7 @@ public class RewardServiceImpl implements RewardService {
 
     @Override
     @Transactional
-    public RewardDetailDTO addReward(RewardRequestDTO dto) {
+    public RewardDetailDTO addReward(String companyAdminId, RewardRequestDTO dto) {
         Company company = companyRepository.findById(dto.companyId())
                 .orElseThrow(() -> new NotFoundException("Company Not Found"));
 
@@ -39,7 +39,7 @@ public class RewardServiceImpl implements RewardService {
 
     @Override
     @Transactional
-    public RewardDetailDTO updateReward(Long id, RewardUpdateDTO dto) {
+    public RewardDetailDTO updateReward(String companyAdminId, Long id, RewardUpdateDTO dto) {
         Reward reward = rewardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Reward not found"));
 
@@ -50,10 +50,8 @@ public class RewardServiceImpl implements RewardService {
         return rewardMapper.toDetailDTO(updatedReward);
     }
 
-
-
     @Override
-    public RewardDetailDTO getRewardById(Long id) {
+    public RewardDetailDTO getRewardById(String companyAdminId, Long id) {
         Reward reward = rewardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Reward not found"));
 
@@ -62,7 +60,7 @@ public class RewardServiceImpl implements RewardService {
 
     @Override
     @Transactional
-    public void deleteReward(Long id) {
+    public void deleteReward(String companyAdminId, Long id) {
         if (!rewardRepository.existsById(id)) {
             throw new NotFoundException("Reward not found");
         }

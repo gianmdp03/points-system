@@ -19,7 +19,7 @@ public class CompanyAccessValidator {
 
     public Company validateAccess(Long companyId, String userId) {
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new NotFoundException("La empresa no existe"));
+                .orElseThrow(() -> new NotFoundException("Company not found"));
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 

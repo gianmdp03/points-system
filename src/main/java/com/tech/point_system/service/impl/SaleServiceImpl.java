@@ -9,6 +9,8 @@ import com.tech.point_system.model.Company;
 import com.tech.point_system.model.Sale;
 import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.SaleRepository;
+import com.tech.point_system.security.user.repository.UserRepository;
+import com.tech.point_system.security.user.service.CompanyAccessValidator;
 import com.tech.point_system.service.SaleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,14 +25,13 @@ public class SaleServiceImpl implements SaleService {
   private final SaleRepository repository;
   private final SaleMapper mapper;
   private final CompanyRepository companyRepository;
+  private final UserRepository userRepository;
+  private final CompanyAccessValidator companyAccessValidator;
 
   @Override
   @Transactional
-  public SaleDetailDTO addSale(SaleRequestDTO dto) {
-    Company company =
-        companyRepository
-            .findById(dto.companyId())
-            .orElseThrow(() -> new NotFoundException("Company ID not found!"));
+  public SaleDetailDTO addSale(String companyAdminId, SaleRequestDTO dto) {
+    Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
       Sale sale = mapper.toEntity(dto);
       sale.setCompany(company);
       sale = repository.save(sale);
@@ -38,7 +39,8 @@ public class SaleServiceImpl implements SaleService {
   }
 
   @Override
-  public Page<SaleListDTO> listCompaniesSales(Long companyId, Pageable pageable){
+  public Page<SaleListDTO> listCompaniesSales(String companyAdminId, Long companyId, Pageable pageable){
+      companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
       Page<Sale> sales = repository.findByCompanyId(companyId, pageable);
       if(sales.isEmpty()){
           return Page.empty();
@@ -47,7 +49,8 @@ public class SaleServiceImpl implements SaleService {
   }
 
   @Override
-  public SaleDetailDTO getSaleById(Long id) {
+  public SaleDetailDTO getSaleById(String companyAdminId, Long companyId, Long id) {
+      companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
     Sale sale = repository.findById(id).orElseThrow(() -> new NotFoundException("Sale ID not found!"));
     return mapper.toDetailDTO(sale);
   }
