@@ -13,6 +13,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,8 +31,8 @@ public class ProductController {
 
     @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN' , 'USER')")
     @GetMapping("/{companyId}")
-    public ResponseEntity<Page<ProductListDTO>> listProducts(@PathVariable Long companyId, @PageableDefault(page = 0, size = 12) Pageable pageable){
-        return ResponseEntity.ok(productService.listProducts(companyId, pageable));
+    public ResponseEntity<Page<ProductListDTO>> listProducts(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PageableDefault(page = 0, size = 12) Pageable pageable){
+        return ResponseEntity.ok(productService.listProducts(jwt.getSubject(), companyId, pageable));
     }
 
     @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN'")
@@ -39,14 +41,16 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProduct(id, dto));
     }
 
+    @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN' , 'USER')")
     @GetMapping("/{id}")
     public ResponseEntity<ProductDetailDTO> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
+    @PreAuthorize("hasAnyRole('COMPANY_ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
+    public ResponseEntity<Void> deleteProduct(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        productService.deleteProduct(jwt.getSubject(), id);
         return ResponseEntity.noContent().build();
     }
 }

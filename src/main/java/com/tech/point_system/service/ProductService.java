@@ -11,8 +11,8 @@ import java.util.List;
 
 public interface ProductService {
     ProductDetailDTO addProduct(ProductRequestDTO dto);
-    Page<ProductListDTO> listProducts(Long companyId, Pageable pageable);
+    Page<ProductListDTO> listProducts(String companyAdminId, Long companyId, Pageable pageable);
     ProductDetailDTO updateProduct(Long id, ProductUpdateDTO dto);
     ProductDetailDTO getProductById(Long id);
-    void deleteProduct(Long id);
+    void deleteProduct(String companyAdminId, Long id);
 }

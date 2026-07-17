@@ -13,10 +13,12 @@ import com.tech.point_system.security.user._enum.Role;
 import com.tech.point_system.security.user.dto.user.UserDetailDTO;
 import com.tech.point_system.security.user.model.User;
 import com.tech.point_system.security.user.repository.UserRepository;
+import com.tech.point_system.security.user.service.CompanyAccessValidator;
 import com.tech.point_system.security.user.service.SupabaseAdminClient;
 import com.tech.point_system.service.PointsAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,11 +32,11 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     private final CompanyRepository companyRepository;
     private final PointsAccountRepository pointsAccountRepository;
     private final SupabaseAdminClient supabaseAdminClient;
+    private final CompanyAccessValidator companyAccessValidator;
 
     @Override
-    public PointsAccountDetailDTO registerClientAndCreateAccount(PointsAccountRequestDTO dto) {
-        Company company = companyRepository.findById(dto.companyId())
-                .orElseThrow(() -> new NotFoundException("La empresa no existe"));
+    public PointsAccountDetailDTO registerClientAndCreateAccount(String companyAdminId, PointsAccountRequestDTO dto) {
+        Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
         User user = userRepository.findByDni(dto.dni()).orElse(null);
         if (user == null) {
             log.info("Usuario nuevo detectado. Iniciando registro en Supabase para DNI: {}", dto.dni());
