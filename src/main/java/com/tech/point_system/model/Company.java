@@ -30,6 +30,9 @@ public class Company {
     @JdbcTypeCode(SqlTypes.JSON)
     private CompanyDetails companyDetails;
 
+    @OneToMany(mappedBy = "company")
+    private PointsAccount pointsAccount;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User admin;

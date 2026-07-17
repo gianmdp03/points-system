@@ -10,9 +10,9 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface ProductService {
-    ProductDetailDTO addProduct(ProductRequestDTO dto);
-    Page<ProductListDTO> listProducts(Long companyId, Pageable pageable);
-    ProductDetailDTO updateProduct(Long id, ProductUpdateDTO dto);
-    ProductDetailDTO getProductById(Long id);
-    void deleteProduct(Long id);
+    ProductDetailDTO addProduct(String companyAdminId, ProductRequestDTO dto);
+    Page<ProductListDTO> listProducts(String companyAdminId, Long companyId, Pageable pageable);
+    ProductDetailDTO updateProduct(String companyAdminId, Long companyId, Long id, ProductUpdateDTO dto);
+    ProductDetailDTO getProductById(String companyAdminId, Long id);
+    void deleteProduct(String companyAdminId, Long companyId, Long id);
 }

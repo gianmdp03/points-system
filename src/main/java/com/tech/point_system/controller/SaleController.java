@@ -14,6 +14,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,17 +26,17 @@ public class SaleController {
     private final SaleService saleService;
 
     @PostMapping
-    public ResponseEntity<SaleDetailDTO> addSale(@Valid @RequestBody SaleRequestDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(saleService.addSale(dto));
+    public ResponseEntity<SaleDetailDTO> addSale(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody SaleRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(saleService.addSale(jwt.getSubject(), dto));
     }
 
     @GetMapping("/{companyId}")
-    public ResponseEntity<Page<SaleListDTO>> listCompaniesSales(@PathVariable Long companyId, @PageableDefault(page = 0, size = 18, sort = "amount", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(saleService.listCompaniesSales(companyId, pageable));
+    public ResponseEntity<Page<SaleListDTO>> listCompaniesSales(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PageableDefault(page = 0, size = 18, sort = "amount", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(saleService.listCompaniesSales(jwt.getSubject(), companyId, pageable));
     }
 
-    @GetMapping("/id/{id}")
-    public ResponseEntity<SaleDetailDTO> getSaleById(@PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(saleService.getSaleById(id));
+    @GetMapping("/{companyId}/{id}")
+    public ResponseEntity<SaleDetailDTO> getSaleById(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(saleService.getSaleById(jwt.getSubject(), companyId, id));
     }
 }

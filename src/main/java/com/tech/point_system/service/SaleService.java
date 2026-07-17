@@ -7,7 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface SaleService {
-    SaleDetailDTO addSale(SaleRequestDTO dto);
-    Page<SaleListDTO> listCompaniesSales(Long companyId, Pageable pageable);
-    SaleDetailDTO getSaleById(Long id);
+    SaleDetailDTO addSale(String companyAdminId, SaleRequestDTO dto);
+    Page<SaleListDTO> listCompaniesSales(String companyAdminId, Long companyId, Pageable pageable);
+    SaleDetailDTO getSaleById(String companyAdminId, Long companyId, Long id);
 }

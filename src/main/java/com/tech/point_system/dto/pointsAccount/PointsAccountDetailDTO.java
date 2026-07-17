@@ -1,4 +1,11 @@
 package com.tech.point_system.dto.pointsAccount;
 
-public record PointsAccountDetailDTO() {
-}
+import com.tech.point_system.dto.company.CompanyListDTO;
+import com.tech.point_system.security.user.dto.user.UserDetailDTO;
+
+public record PointsAccountDetailDTO(
+        Long id,
+        Integer balance,
+        CompanyListDTO company,
+        UserDetailDTO user
+) {}

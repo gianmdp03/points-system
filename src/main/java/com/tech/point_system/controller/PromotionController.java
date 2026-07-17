@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,28 +24,28 @@ public class PromotionController {
     private final PromotionService promotionService;
 
     @PostMapping
-    public ResponseEntity<PromotionDetailDTO> addPromotion(@Valid @RequestBody PromotionRequestDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(promotionService.addPromotion(dto));
+    public ResponseEntity<PromotionDetailDTO> addPromotion(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody PromotionRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(promotionService.addPromotion(jwt.getSubject(), dto));
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<PromotionDetailDTO> updatePromotion(@PathVariable Long id, @Valid @RequestBody PromotionUpdateDTO dto) {
-        return ResponseEntity.status(HttpStatus.OK).body(promotionService.updatePromotion(id,dto));
+    @PatchMapping("/{companyId}/{id}")
+    public ResponseEntity<PromotionDetailDTO> updatePromotion(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id, @Valid @RequestBody PromotionUpdateDTO dto) {
+        return ResponseEntity.status(HttpStatus.OK).body(promotionService.updatePromotion(jwt.getSubject(), companyId, id, dto));
     }
 
     @GetMapping("/{companyId}")
-    public ResponseEntity<Page<PromotionListDTO>> listPromotions(@PathVariable Long companyId, Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(promotionService.listPromotions(companyId, pageable));
+    public ResponseEntity<Page<PromotionListDTO>> listPromotions(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(promotionService.listPromotions(jwt.getSubject(), companyId, pageable));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<PromotionDetailDTO> getPromotionById(@PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(promotionService.getPromotionById(id));
+    @GetMapping("/{companyId}/{id}")
+    public ResponseEntity<PromotionDetailDTO> getPromotionById(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(promotionService.getPromotionById(jwt.getSubject(), companyId, id));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePromotion(@PathVariable Long id) {
-        promotionService.deletePromotion(id);
+    @DeleteMapping("/{companyId}/{id}")
+    public ResponseEntity<Void> deletePromotion(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id) {
+        promotionService.deletePromotion(jwt.getSubject(), companyId, id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
