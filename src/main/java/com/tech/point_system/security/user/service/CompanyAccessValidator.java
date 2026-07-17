@@ -22,11 +22,15 @@ public class CompanyAccessValidator {
                 .orElseThrow(() -> new NotFoundException("La empresa no existe"));
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
         boolean isAppAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_APP_ADMIN"));
 
-        if (isAppAdmin) {
-            log.info("Acceso concedido por rol APP_ADMIN a la empresa {}", companyId);
+        boolean isUser = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_USER"));
+
+        if (isAppAdmin || isUser) {
+            log.info("Acceso concedido por rol {} a la empresa {}", isAppAdmin ? "APP_ADMIN" : "USER", companyId);
             return company;
         }
 
@@ -36,5 +40,9 @@ public class CompanyAccessValidator {
         }
 
         return company;
+    }
+    
+    public void checkAccessOnly(Long companyId, String userId) {
+        validateAccess(companyId, userId);
     }
 }
