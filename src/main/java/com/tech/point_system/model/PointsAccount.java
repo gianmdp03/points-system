@@ -28,4 +28,7 @@ public class PointsAccount {
 
   @Column(nullable = false)
   private Integer balance = 0;
+
+  @Version
+  private Long version;
 }

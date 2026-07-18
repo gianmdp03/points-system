@@ -3,12 +3,15 @@ package com.tech.point_system.service.impl;
 import com.tech.point_system.dto.company.CompanyListDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountDetailDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountRequestDTO;
+import com.tech.point_system.exception.BadRequestException;
 import com.tech.point_system.exception.ConflictException;
 import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.PointsAccount;
+import com.tech.point_system.model.PointsTransaction;
 import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.PointsAccountRepository;
+import com.tech.point_system.repository.PointsTransactionRepository;
 import com.tech.point_system.security.user._enum.Role;
 import com.tech.point_system.security.user.dto.user.UserDetailDTO;
 import com.tech.point_system.security.user.model.User;
@@ -18,7 +21,8 @@ import com.tech.point_system.security.user.service.SupabaseAdminClient;
 import com.tech.point_system.service.PointsAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +35,7 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final PointsAccountRepository pointsAccountRepository;
+    private final PointsTransactionRepository transactionRepository;
     private final SupabaseAdminClient supabaseAdminClient;
     private final CompanyAccessValidator companyAccessValidator;
 
@@ -88,5 +93,30 @@ public class PointsAccountServiceImpl implements PointsAccountService {
                 companyDTO,
                 userDTO
         );
+    }
+
+    @Override
+    @Transactional
+    public void deductPoints(Long accountId, Integer pointsToDeduct) {
+        PointsAccount account = pointsAccountRepository.findById(accountId)
+                .orElseThrow(() -> new NotFoundException("Points account not found"));
+
+        if (account.getBalance() < pointsToDeduct) {
+            throw new BadRequestException("Insufficient balance in the points account");
+        }
+
+        account.setBalance(account.getBalance() - pointsToDeduct);
+
+        pointsAccountRepository.save(account);
+
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PointsTransaction> getTransactionHistory(Long accountId, Pageable pageable) {
+        if (!pointsAccountRepository.existsById(accountId)) {
+            throw new NotFoundException("Points account not found");
+        }
+        return transactionRepository.findByPointsAccountId(accountId, pageable);
     }
 }
