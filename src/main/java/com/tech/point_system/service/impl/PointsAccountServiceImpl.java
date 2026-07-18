@@ -5,6 +5,7 @@ import com.tech.point_system.dto.pointsAccount.PointsAccountDetailDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountRequestDTO;
 import com.tech.point_system.exception.ConflictException;
 import com.tech.point_system.exception.NotFoundException;
+import com.tech.point_system.mapper.PointsAccountMapper;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.PointsAccount;
 import com.tech.point_system.repository.CompanyRepository;
@@ -18,16 +19,18 @@ import com.tech.point_system.security.user.service.SupabaseAdminClient;
 import com.tech.point_system.service.PointsAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Slf4j
 public class PointsAccountServiceImpl implements PointsAccountService {
-
+    private final PointsAccountMapper mapper;
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final PointsAccountRepository pointsAccountRepository;
@@ -35,6 +38,7 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     private final CompanyAccessValidator companyAccessValidator;
 
     @Override
+    @Transactional
     public PointsAccountDetailDTO registerClientAndCreateAccount(String companyAdminId, PointsAccountRequestDTO dto) {
         Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
         User user = userRepository.findByDni(dto.dni()).orElse(null);
@@ -88,5 +92,15 @@ public class PointsAccountServiceImpl implements PointsAccountService {
                 companyDTO,
                 userDTO
         );
+    }
+
+    @Override
+    public Page<PointsAccountDetailDTO> listPointsAccounts(String companyAdminId, Long companyId, Pageable pageable){
+        companyAccessValidator.validateAccess(companyId, companyAdminId);
+        Page<PointsAccount> pointsAccounts = pointsAccountRepository.findByCompanyId(companyId, pageable);
+        if(pointsAccounts.isEmpty()){
+            return Page.empty();
+        }
+        return pointsAccounts.map(mapper::toDetailDTO);
     }
 }
