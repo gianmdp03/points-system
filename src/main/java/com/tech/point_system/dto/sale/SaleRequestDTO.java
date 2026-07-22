@@ -1,5 +1,7 @@
 package com.tech.point_system.dto.sale;
 
-import java.math.BigDecimal;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-public record SaleRequestDTO(BigDecimal amount, Long companyId, String userDni) {}
+import java.math.BigDecimal;
+public record SaleRequestDTO(@NotNull BigDecimal amount, @NotNull Long companyId, @NotBlank String userDni) {}
