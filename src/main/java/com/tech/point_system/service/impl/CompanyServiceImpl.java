@@ -33,10 +33,10 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     @Transactional
-    public CompanyDetailDTO addCompany(String companyAdminId, CompanyRequestDTO dto) {
+    public CompanyDetailDTO addCompany(String userDni, CompanyRequestDTO dto) {
         Company company = mapper.toEntity(dto);
-        User proxyAdmin = userRepository.getReferenceById(companyAdminId);
-        company.setAdmin(proxyAdmin);
+        User user = userRepository.findByDni(userDni).orElseThrow(()-> new NotFoundException("Company Admin Not Found"));
+        company.setAdmin(user);
         company = repository.save(company);
         return mapper.toDetailDTO(company);
     }

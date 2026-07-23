@@ -26,10 +26,10 @@ public class CompanyController {
     private final CompanyService companyService;
 
     @PreAuthorize("hasRole('APP_ADMIN')")
-    @PostMapping
-    public ResponseEntity<CompanyDetailDTO> addCompany(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CompanyRequestDTO dto)
+    @PostMapping("/{userDni}")
+    public ResponseEntity<CompanyDetailDTO> addCompany(@PathVariable String userDni, @Valid @RequestBody CompanyRequestDTO dto)
     {
-        return ResponseEntity.status(HttpStatus.CREATED).body(companyService.addCompany(jwt.getSubject(), dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(companyService.addCompany(userDni, dto));
     }
 
     @PreAuthorize("hasAnyRole('COMPANY_ADMIN','APP_ADMIN')")
@@ -50,5 +50,17 @@ public class CompanyController {
         return ResponseEntity.status(HttpStatus.OK).body(companyService.getCompanyById(id));
     }
 
+    @PreAuthorize("hasRole('COMPANY_ADMIN')")
+    @DeleteMapping("/disable/{companyId}")
+    public ResponseEntity<Void> disableCompany(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId){
+        companyService.disableCompany(jwt.getSubject(), companyId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 
+    @PreAuthorize("hasRole('COMPANY_ADMIN')")
+    @DeleteMapping("/enable/{companyId}")
+    public ResponseEntity<Void> enableCompany(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId){
+        companyService.enableCompany(jwt.getSubject(), companyId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 }
