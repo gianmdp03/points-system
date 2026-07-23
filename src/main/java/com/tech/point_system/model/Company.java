@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
@@ -41,6 +42,12 @@ public class Company {
     private boolean isEnabled = true;  //PONER TASK CON UN METODO QUE BUSCA COMPANIES MARCADAS PARA ELIMINACION 30 DIAS DESPUES.
 
     private LocalDate disabledDate;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal amountStep = new BigDecimal("100");
+
+    @Column(nullable = false)
+    private Integer pointsPerStep = 1;
 
     @OneToMany(mappedBy = "company")
     private Set<PointsAccount> pointsAccounts = new HashSet<>();

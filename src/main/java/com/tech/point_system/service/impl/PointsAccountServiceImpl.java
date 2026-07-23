@@ -3,6 +3,7 @@ package com.tech.point_system.service.impl;
 import com.tech.point_system.dto.company.CompanyListDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountDetailDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountRequestDTO;
+import com.tech.point_system.event.SaleCreatedEvent;
 import com.tech.point_system.exception.BadRequestException;
 import com.tech.point_system.exception.ConflictException;
 import com.tech.point_system.exception.NotFoundException;
@@ -22,6 +23,7 @@ import com.tech.point_system.security.user.service.SupabaseAdminClient;
 import com.tech.point_system.service.PointsAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -89,13 +91,23 @@ public class PointsAccountServiceImpl implements PointsAccountService {
         company.getId());
 
     CompanyListDTO companyDTO =
-        new CompanyListDTO(company.getId(), company.getName(), company.getCompanyDetails());
+        new CompanyListDTO(company.getId(), company.getName(), company.getCompanyDetails(), company.getAmountStep(), company.getPointsPerStep());
 
     UserDetailDTO userDTO =
         new UserDetailDTO(
             user.getId(), user.getEmail(), user.getName(), user.getDni(), user.getRole());
 
     return new PointsAccountDetailDTO(account.getId(), account.getBalance(), companyDTO, userDTO);
+  }
+
+  @EventListener
+  @Transactional
+  public void handleSaleCreated(SaleCreatedEvent event) {
+    PointsAccount pointsAccount =
+        pointsAccountRepository
+            .findByUserIdAndCompanyId(event.user().getId(), event.company().getId())
+            .orElseThrow(() -> new NotFoundException("Points Account not found"));
+    //FALTA COMPLETAR
   }
 
   @Override
