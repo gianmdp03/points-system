@@ -24,9 +24,6 @@ public class Promotion {
     private String description;
 
     @Column(nullable = false)
-    private boolean isEnabled = false;
-
-    @Column(nullable = false)
     private OffsetDateTime startDate;
 
     @Column(nullable = false)
@@ -35,4 +32,17 @@ public class Promotion {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Promotion other)) return false;
+
+        return this.id != null && this.id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }
