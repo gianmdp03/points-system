@@ -10,6 +10,7 @@ import com.tech.point_system.model.Company;
 import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.security.user.model.User;
 import com.tech.point_system.security.user.repository.UserRepository;
+import com.tech.point_system.security.user.service.CompanyAccessValidator;
 import com.tech.point_system.service.CompanyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 @Service
@@ -26,6 +29,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository repository;
     private final CompanyMapper mapper;
     private final UserRepository userRepository;
+    private final CompanyAccessValidator accessValidator;
 
     @Override
     @Transactional
@@ -40,7 +44,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     @Transactional
     public CompanyDetailDTO updateCompany(String companyAdminId, Long companyId, CompanyUpdateDTO dto) {
-        Company company = repository.findById(companyId).orElseThrow(() -> new NotFoundException("Company Not Found"));
+        Company company = accessValidator.validateAccess(companyId, companyAdminId);
         mapper.updateEntityFromDTO(dto, company);
         company = repository.save(company);
         return mapper.toDetailDTO(company);
@@ -63,7 +67,18 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     @Transactional
-    public void deleteCompany(Long id) {
-        repository.deleteById(id);
+    public void disableCompany(String companyAdminId, Long companyId) {
+        Company company = accessValidator.validateAccess(companyId, companyAdminId);
+        company.setEnabled(false);
+        company.setDisabledDate(OffsetDateTime.now(ZoneOffset.UTC));
+        repository.save(company);
+    }
+
+    @Override
+    @Transactional
+    public void enableCompany(String companyAdminId, Long companyId){
+        Company company = accessValidator.validateAccess(companyId, companyAdminId);
+        company.setEnabled(true);
+        company.setDisabledDate(null);
     }
 }

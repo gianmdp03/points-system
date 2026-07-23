@@ -10,7 +10,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -41,7 +40,7 @@ public class Company {
     @Column(nullable = false)
     private boolean isEnabled = true;  //PONER TASK CON UN METODO QUE BUSCA COMPANIES MARCADAS PARA ELIMINACION 30 DIAS DESPUES.
 
-    private LocalDate disabledDate;
+    private OffsetDateTime disabledDate;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amountStep = new BigDecimal("100");

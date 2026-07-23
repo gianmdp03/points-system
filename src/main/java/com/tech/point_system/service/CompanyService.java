@@ -12,5 +12,6 @@ public interface CompanyService {
     CompanyDetailDTO updateCompany(String companyAdminId, Long id, CompanyUpdateDTO dto);
     Page<CompanyListDTO> listCompanies(Pageable pageable);
     CompanyDetailDTO getCompanyById(Long id);
-    void deleteCompany(Long id);
+    void disableCompany(String companyAdminId, Long companyId);
+    void enableCompany(String companyAdminId, Long companyId);
 }
