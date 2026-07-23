@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -28,6 +29,9 @@ public class Promotion {
 
     @Column(nullable = false)
     private OffsetDateTime endDate;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal multiplier;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
