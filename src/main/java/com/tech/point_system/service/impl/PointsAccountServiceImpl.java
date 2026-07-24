@@ -11,9 +11,11 @@ import com.tech.point_system.mapper.PointsAccountMapper;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.PointsAccount;
 import com.tech.point_system.model.PointsTransaction;
+import com.tech.point_system.model.Promotion;
 import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.PointsAccountRepository;
 import com.tech.point_system.repository.PointsTransactionRepository;
+import com.tech.point_system.repository.PromotionRepository;
 import com.tech.point_system.security.user._enum.Role;
 import com.tech.point_system.security.user.dto.user.UserDetailDTO;
 import com.tech.point_system.security.user.model.User;
@@ -21,6 +23,7 @@ import com.tech.point_system.security.user.repository.UserRepository;
 import com.tech.point_system.security.user.service.CompanyAccessValidator;
 import com.tech.point_system.security.user.service.SupabaseAdminClient;
 import com.tech.point_system.service.PointsAccountService;
+import com.tech.point_system.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -29,6 +32,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Optional;
+
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -36,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointsAccountServiceImpl implements PointsAccountService {
   private final PointsAccountMapper mapper;
   private final UserRepository userRepository;
+  private final PromotionRepository promotionRepository;
   private final CompanyRepository companyRepository;
   private final PointsAccountRepository pointsAccountRepository;
   private final PointsTransactionRepository transactionRepository;
@@ -103,11 +113,45 @@ public class PointsAccountServiceImpl implements PointsAccountService {
   @EventListener
   @Transactional
   public void handleSaleCreated(SaleCreatedEvent event) {
+    log.info("Procesando evento de venta para calcular puntos. Usuario: {}, Empresa: {}",
+            event.user().getId(), event.company().getId());
+
     PointsAccount pointsAccount =
-        pointsAccountRepository
-            .findByUserIdAndCompanyId(event.user().getId(), event.company().getId())
-            .orElseThrow(() -> new NotFoundException("Points Account not found"));
-    //FALTA COMPLETAR
+            pointsAccountRepository
+                    .findByUserIdAndCompanyId(event.user().getId(), event.company().getId())
+                    .orElseThrow(() -> new NotFoundException("Points Account not found"));
+
+    BigDecimal amount = event.amount();
+    BigDecimal step = event.company().getAmountStep();
+    Integer pointsPerStep = event.company().getPointsPerStep();
+
+    int basePoints = amount.divideToIntegralValue(step).intValue() * pointsPerStep;
+
+    OffsetDateTime nowUtc = OffsetDateTime.now(ZoneOffset.UTC);
+
+    BigDecimal multiplier = promotionRepository
+            .findActivePromotion(event.company().getId(), nowUtc)
+            .map(Promotion::getMultiplier)
+            .orElse(BigDecimal.ONE);
+
+    int pointsToEarn = BigDecimal.valueOf(basePoints)
+            .multiply(multiplier)
+            .setScale(0, RoundingMode.HALF_UP)
+            .intValue();
+
+    pointsAccount.setBalance(pointsAccount.getBalance() + pointsToEarn);
+    pointsAccount = pointsAccountRepository.save(pointsAccount);
+
+    PointsTransaction transaction = new PointsTransaction();
+    transaction.setAccount(pointsAccount);
+    transaction.setAmount(pointsToEarn);
+    transaction.setTransactionType("EARNED");
+    transaction.setCreatedAt(nowUtc);
+
+    transactionRepository.save(transaction);
+
+    log.info("Venta procesada con éxito. Se acreditaron {} puntos (Base: {}, Multiplicador: {}). Nuevo balance: {}",
+            pointsToEarn, basePoints, multiplier, pointsAccount.getBalance());
   }
 
   @Override
