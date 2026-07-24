@@ -8,5 +8,5 @@ import jakarta.validation.constraints.Size;
 public record RewardRequestDTO(
     @NotBlank @Size(max = 100) String name,
     @Size(max = 500) String description,
-    @NotNull @Positive Integer pointsToEarn,
+    @NotNull @Positive Integer costInPoints,
     @NotNull Long companyId) {}

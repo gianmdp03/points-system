@@ -3,6 +3,7 @@ package com.tech.point_system.service.impl;
 import com.tech.point_system.dto.company.CompanyListDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountDetailDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountRequestDTO;
+import com.tech.point_system.event.RewardRedeemEvent;
 import com.tech.point_system.event.SaleCreatedEvent;
 import com.tech.point_system.exception.BadRequestException;
 import com.tech.point_system.exception.ConflictException;
@@ -167,18 +168,19 @@ public class PointsAccountServiceImpl implements PointsAccountService {
   }
 
   @Override
+  @EventListener
   @Transactional
-  public void deductPoints(Long accountId, Integer pointsToDeduct) {
+  public void deductPoints(RewardRedeemEvent event) {
     PointsAccount account =
         pointsAccountRepository
-            .findById(accountId)
+            .findByUserIdAndCompanyId(event.user().getId(), event.company().getId())
             .orElseThrow(() -> new NotFoundException("Points account not found"));
 
-    if (account.getBalance() < pointsToDeduct) {
+    if (account.getBalance() < event.costInPoints()) {
       throw new BadRequestException("Insufficient balance in the points account");
     }
 
-    account.setBalance(account.getBalance() - pointsToDeduct);
+    account.setBalance(account.getBalance() - event.costInPoints());
 
     pointsAccountRepository.save(account);
   }

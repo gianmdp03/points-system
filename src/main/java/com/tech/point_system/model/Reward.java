@@ -22,6 +22,9 @@ public class Reward {
     @Column(nullable = false)
     private Integer costInPoints;
 
+    @Column(nullable = false)
+    private Boolean isEnabled = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;

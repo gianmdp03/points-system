@@ -9,8 +9,9 @@ import org.springframework.data.domain.Pageable;
 
 public interface RewardService {
     RewardDetailDTO addReward(String companyAdminId, RewardRequestDTO dto);
+    void redeemReward(String companyAdminId, Long companyId, Long id, String userDni);
     RewardDetailDTO updateReward(String companyAdminId, Long companyId, Long id, RewardUpdateDTO dto);
     Page<RewardListDTO> listRewards(String companyAdminId, Long companyId, Pageable pageable);
     RewardDetailDTO getRewardById(String companyAdminId, Long companyId, Long id);
-    void deleteReward(String companyAdminId, Long companyId, Long id);
+    void enableOrDisableReward(String companyAdminId, Long companyId, Long id);
 }
