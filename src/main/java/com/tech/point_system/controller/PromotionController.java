@@ -44,8 +44,8 @@ public class PromotionController {
     }
 
     @DeleteMapping("/{companyId}/{id}")
-    public ResponseEntity<Void> deletePromotion(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id) {
-        promotionService.deletePromotion(jwt.getSubject(), companyId, id);
+    public ResponseEntity<Void> enabledOrDisabled(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id) {
+        promotionService.enabledOrDisabled(jwt.getSubject(), companyId, id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

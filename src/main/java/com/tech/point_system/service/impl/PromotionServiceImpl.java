@@ -79,15 +79,12 @@ public class PromotionServiceImpl implements PromotionService {
     return promotionMapper.toDetailDTO(promotion);
   }
 
-  
-
   @Override
   @Transactional
-  public void deletePromotion(String companyAdminId, Long companyId, Long id) {
-      companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
-    if (!promotionRepository.existsById(id)) {
-      throw new NotFoundException("Promotion not found");
-    }
-    promotionRepository.deleteById(id);
+  public void enabledOrDisabled(String companyAdminId, Long companyId, Long id) {
+    companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+    Promotion promotion = promotionRepository.findById(id).orElseThrow(() -> new NotFoundException("Promotion not found"));
+    promotion.setIsEnabled(!promotion.getIsEnabled());
+    promotionRepository.save(promotion);
   }
 }
