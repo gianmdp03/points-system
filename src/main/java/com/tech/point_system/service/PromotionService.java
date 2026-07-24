@@ -12,5 +12,5 @@ public interface PromotionService {
     PromotionDetailDTO updatePromotion(String companyAdminId, Long companyId, Long id, PromotionUpdateDTO dto);
     Page<PromotionListDTO> listPromotions(String companyAdminId, Long companyId, Pageable pageable);
     PromotionDetailDTO getPromotionById(String companyAdminId, Long companyId, Long id);
-    void deletePromotion(String companyAdminId, Long companyId, Long id);
+    void enabledOrDisabled(String companyAdminId, Long companyId, Long id);
 }

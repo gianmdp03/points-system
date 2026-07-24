@@ -48,7 +48,7 @@ public class PromotionServiceImpl implements PromotionService {
     companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
     Promotion promotion =
         promotionRepository
-            .findById(id)
+            .findByIdAndCompanyId(id, companyId)
             .orElseThrow(() -> new NotFoundException("Promotion not found"));
 
     promotionMapper.updateEntityFromDTO(dto, promotion);
@@ -73,21 +73,18 @@ public class PromotionServiceImpl implements PromotionService {
       companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
     Promotion promotion =
         promotionRepository
-            .findById(id)
+            .findByIdAndCompanyId(id, companyId)
             .orElseThrow(() -> new NotFoundException("Promotion not found"));
 
     return promotionMapper.toDetailDTO(promotion);
   }
 
-  
-
   @Override
   @Transactional
-  public void deletePromotion(String companyAdminId, Long companyId, Long id) {
-      companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
-    if (!promotionRepository.existsById(id)) {
-      throw new NotFoundException("Promotion not found");
-    }
-    promotionRepository.deleteById(id);
+  public void enabledOrDisabled(String companyAdminId, Long companyId, Long id) {
+    companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+    Promotion promotion = promotionRepository.findByIdAndCompanyId(id, companyId).orElseThrow(() -> new NotFoundException("Promotion not found"));
+    promotion.setIsEnabled(!promotion.getIsEnabled());
+    promotionRepository.save(promotion);
   }
 }
