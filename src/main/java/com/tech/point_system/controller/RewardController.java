@@ -1,9 +1,6 @@
 package com.tech.point_system.controller;
 
-import com.tech.point_system.dto.reward.RewardDetailDTO;
-import com.tech.point_system.dto.reward.RewardListDTO;
-import com.tech.point_system.dto.reward.RewardRequestDTO;
-import com.tech.point_system.dto.reward.RewardUpdateDTO;
+import com.tech.point_system.dto.reward.*;
 import com.tech.point_system.service.RewardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +26,12 @@ public class RewardController {
         return ResponseEntity.status(HttpStatus.CREATED).body(rewardService.addReward(jwt.getSubject(), dto));
     }
 
+    @PostMapping("/redeem")
+    public ResponseEntity<Void> redeemReward(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody RewardRedeemDTO dto) {
+        rewardService.redeemReward(jwt.getSubject(), dto.companyId(), dto.rewardId(), dto.userDni());
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
     @PutMapping("/{companyId}/{id}")
     public ResponseEntity<RewardDetailDTO> updateReward(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id, RewardUpdateDTO dto){
         return ResponseEntity.ok(rewardService.updateReward(jwt.getSubject(), companyId, id, dto));
@@ -45,8 +48,8 @@ public class RewardController {
     }
 
     @DeleteMapping("/{companyId}/{id}")
-    public ResponseEntity<Void> deleteReward(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id){
-        rewardService.deleteReward(jwt.getSubject(), companyId, id);
+    public ResponseEntity<Void> enableOrDisableReward(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id){
+        rewardService.enableOrDisableReward(jwt.getSubject(), companyId, id);
         return ResponseEntity.noContent().build();
     }
 }
