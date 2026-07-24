@@ -12,4 +12,5 @@ public record PromotionDetailDTO(
     OffsetDateTime startDate,
     OffsetDateTime endDate,
     BigDecimal multiplier,
+    boolean isEnabled,
     CompanyListDTO company) {}

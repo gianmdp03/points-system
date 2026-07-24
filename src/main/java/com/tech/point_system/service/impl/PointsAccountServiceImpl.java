@@ -101,7 +101,7 @@ public class PointsAccountServiceImpl implements PointsAccountService {
         company.getId());
 
     CompanyListDTO companyDTO =
-        new CompanyListDTO(company.getId(), company.getName(), company.getCompanyDetails(), company.getAmountStep(), company.getPointsPerStep());
+        new CompanyListDTO(company.getId(), company.getName(), company.getCompanyDetails(), company.getAmountStep(), company.getPointsPerStep(), company.getIsEnabled());
 
     UserDetailDTO userDTO =
         new UserDetailDTO(

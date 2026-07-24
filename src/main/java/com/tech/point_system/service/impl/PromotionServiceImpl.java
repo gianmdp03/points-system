@@ -79,6 +79,8 @@ public class PromotionServiceImpl implements PromotionService {
     return promotionMapper.toDetailDTO(promotion);
   }
 
+  
+
   @Override
   @Transactional
   public void deletePromotion(String companyAdminId, Long companyId, Long id) {

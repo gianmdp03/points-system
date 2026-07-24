@@ -9,4 +9,5 @@ public record PromotionListDTO(
     String description,
     OffsetDateTime startDate,
     OffsetDateTime endDate,
+    boolean isEnabled,
     BigDecimal multiplier) {}

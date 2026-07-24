@@ -31,7 +31,7 @@ public class Promotion {
     private OffsetDateTime endDate;
 
     @Column(nullable = false)
-    private boolean isEnabled = true;
+    private Boolean isEnabled = true;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal multiplier;

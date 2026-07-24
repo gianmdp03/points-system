@@ -19,8 +19,8 @@ public class Reward {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "points_to_earn")
-    private Integer pointsToEarn;
+    @Column(nullable = false)
+    private Integer costInPoints;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)

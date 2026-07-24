@@ -38,7 +38,7 @@ public class Company {
     private User admin;
 
     @Column(nullable = false)
-    private boolean isEnabled = true;  //PONER TASK CON UN METODO QUE BUSCA COMPANIES MARCADAS PARA ELIMINACION 30 DIAS DESPUES.
+    private Boolean isEnabled = true;
 
     private OffsetDateTime disabledDate;
 
