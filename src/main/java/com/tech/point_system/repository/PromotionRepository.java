@@ -22,4 +22,6 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
             @Param("companyId") Long companyId,
             @Param("now") OffsetDateTime now
     );
+
+    Optional<Promotion> findByIdAndCompanyId(Long id, Long companyId);
 }

@@ -8,7 +8,6 @@ import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.mapper.ProductMapper;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.Product;
-import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.ProductRepository;
 import com.tech.point_system.security.user.service.CompanyAccessValidator;
 import com.tech.point_system.service.ProductService;
@@ -41,8 +40,7 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public Page<ProductListDTO> listProducts(
-      String companyAdminId, Long companyId, Pageable pageable) {
+  public Page<ProductListDTO> listProducts(String companyAdminId, Long companyId, Pageable pageable) {
     Company company = companyAccessValidator.validateAccess(companyId, companyAdminId);
     Page<Product> products = productRepository.findByCompany(company, pageable);
     if (products.isEmpty()) {
@@ -58,7 +56,7 @@ public class ProductServiceImpl implements ProductService {
     companyAccessValidator.validateAccess(companyId, companyAdminId);
     Product product =
         productRepository
-            .findById(id)
+            .findByIdAndCompanyId(id, companyId)
             .orElseThrow(() -> new NotFoundException("Product not found"));
 
     productMapper.updateEntityFromDTO(dto, product);
