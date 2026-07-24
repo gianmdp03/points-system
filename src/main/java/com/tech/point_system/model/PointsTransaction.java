@@ -1,5 +1,6 @@
 package com.tech.point_system.model;
 
+import com.tech.point_system._enum.TransactionType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,10 +24,9 @@ public class PointsTransaction {
     @Column(nullable = false)
     private Integer amount;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String transactionType;
-
-    private Long referenceId;
+    private TransactionType transactionType;
 
     @Column(nullable = false)
     private OffsetDateTime createdAt;

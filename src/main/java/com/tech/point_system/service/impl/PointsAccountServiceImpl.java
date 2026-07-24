@@ -1,14 +1,17 @@
 package com.tech.point_system.service.impl;
 
+import com.tech.point_system._enum.TransactionType;
 import com.tech.point_system.dto.company.CompanyListDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountDetailDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountRequestDTO;
+import com.tech.point_system.dto.pointsTransaction.PointsTransactionDetailDTO;
 import com.tech.point_system.event.RewardRedeemEvent;
 import com.tech.point_system.event.SaleCreatedEvent;
 import com.tech.point_system.exception.BadRequestException;
 import com.tech.point_system.exception.ConflictException;
 import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.mapper.PointsAccountMapper;
+import com.tech.point_system.mapper.PointsTransactionMapper;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.PointsAccount;
 import com.tech.point_system.model.PointsTransaction;
@@ -52,6 +55,7 @@ public class PointsAccountServiceImpl implements PointsAccountService {
   private final PointsTransactionRepository transactionRepository;
   private final SupabaseAdminClient supabaseAdminClient;
   private final CompanyAccessValidator companyAccessValidator;
+  private final PointsTransactionMapper transactionMapper;
 
   @Override
   @Transactional
@@ -111,6 +115,31 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     return new PointsAccountDetailDTO(account.getId(), account.getBalance(), companyDTO, userDTO);
   }
 
+
+  @Override
+  public Page<PointsAccountDetailDTO> listPointsAccounts(
+      String companyAdminId, Long companyId, Pageable pageable) {
+    companyAccessValidator.validateAccess(companyId, companyAdminId);
+    Page<PointsAccount> pointsAccounts =
+        pointsAccountRepository.findByCompanyId(companyId, pageable);
+    if (pointsAccounts.isEmpty()) {
+      return Page.empty();
+    }
+    return pointsAccounts.map(mapper::toDetailDTO);
+  }
+
+  @Override
+  @Transactional
+  public Page<PointsTransactionDetailDTO> getTransactionHistory(String userId, Long companyId, Pageable pageable) {
+    PointsAccount pointsAccount = pointsAccountRepository.findByUserIdAndCompanyId(userId, companyId).orElseThrow(()-> new NotFoundException("PointsAccount not found"));
+    Page<PointsTransaction> pointsTransactionList = transactionRepository.findByPointsAccount(pointsAccount, pageable);
+    if(pointsTransactionList.isEmpty()) {
+      return Page.empty();
+    }
+    return pointsTransactionList.map(transactionMapper::toDetailDTO);
+  }
+
+  //EVENTS
   @EventListener
   @Transactional
   public void handleSaleCreated(SaleCreatedEvent event) {
@@ -146,7 +175,7 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     PointsTransaction transaction = new PointsTransaction();
     transaction.setAccount(pointsAccount);
     transaction.setAmount(pointsToEarn);
-    transaction.setTransactionType("EARNED");
+    transaction.setTransactionType(TransactionType.EARNED);
     transaction.setCreatedAt(nowUtc);
 
     transactionRepository.save(transaction);
@@ -155,19 +184,6 @@ public class PointsAccountServiceImpl implements PointsAccountService {
             pointsToEarn, basePoints, multiplier, pointsAccount.getBalance());
   }
 
-  @Override
-  public Page<PointsAccountDetailDTO> listPointsAccounts(
-      String companyAdminId, Long companyId, Pageable pageable) {
-    companyAccessValidator.validateAccess(companyId, companyAdminId);
-    Page<PointsAccount> pointsAccounts =
-        pointsAccountRepository.findByCompanyId(companyId, pageable);
-    if (pointsAccounts.isEmpty()) {
-      return Page.empty();
-    }
-    return pointsAccounts.map(mapper::toDetailDTO);
-  }
-
-  @Override
   @EventListener
   @Transactional
   public void deductPoints(RewardRedeemEvent event) {
@@ -182,15 +198,16 @@ public class PointsAccountServiceImpl implements PointsAccountService {
 
     account.setBalance(account.getBalance() - event.costInPoints());
 
-    pointsAccountRepository.save(account);
-  }
+    account = pointsAccountRepository.save(account);
 
-  @Override
-  @Transactional(readOnly = true)
-  public Page<PointsTransaction> getTransactionHistory(Long accountId, Pageable pageable) {
-    if (!pointsAccountRepository.existsById(accountId)) {
-      throw new NotFoundException("Points account not found");
-    }
-    return transactionRepository.findByPointsAccountId(accountId, pageable);
+    OffsetDateTime nowUtc = OffsetDateTime.now(ZoneOffset.UTC);
+
+    PointsTransaction transaction = new PointsTransaction();
+    transaction.setAccount(account);
+    transaction.setAmount((event.costInPoints())*(-1));
+    transaction.setTransactionType(TransactionType.REDEEMED);
+    transaction.setCreatedAt(nowUtc);
+
+    transactionRepository.save(transaction);
   }
 }

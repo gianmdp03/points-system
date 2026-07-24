@@ -2,6 +2,7 @@ package com.tech.point_system.controller;
 
 import com.tech.point_system.dto.pointsAccount.PointsAccountDetailDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountRequestDTO;
+import com.tech.point_system.dto.pointsTransaction.PointsTransactionDetailDTO;
 import com.tech.point_system.model.PointsTransaction;
 import com.tech.point_system.service.PointsAccountService;
 import jakarta.validation.Valid;
@@ -31,10 +32,14 @@ public class PointsAccountController {
         .body(pointsAccountService.registerClientAndCreateAccount(jwt.getSubject(), dto));
   }
 
-  @GetMapping("/{accountId}/transactions")
-    public ResponseEntity<Page<PointsTransaction>> getTransactionHistory(@PathVariable Long accountId, @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+  @GetMapping("/{companyId}")
+  public ResponseEntity<Page<PointsAccountDetailDTO>> listPointsAccounts(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, Pageable pageable) {
+    return ResponseEntity.status(HttpStatus.OK).body(pointsAccountService.listPointsAccounts(jwt.getSubject(), companyId, pageable));
+  }
 
-        Page<PointsTransaction> history = pointsAccountService.getTransactionHistory(accountId, pageable);
-        return ResponseEntity.ok(history);
-    }
+  @PreAuthorize("hasRole('USER')")
+  @GetMapping("/history/{companyId}")
+  public ResponseEntity<Page<PointsTransactionDetailDTO>> getTransactionHistory(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+    return ResponseEntity.status(HttpStatus.OK).body(pointsAccountService.getTransactionHistory(jwt.getSubject(), companyId, pageable));
+  }
 }
