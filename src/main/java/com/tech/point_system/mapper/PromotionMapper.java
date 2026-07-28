@@ -8,11 +8,11 @@ import com.tech.point_system.model.Promotion;
 import org.mapstruct.*;
 
 @Mapper(
-    config = GlobalMapperConfig.class,
-    uses = {CompanyMapper.class})
+    config = GlobalMapperConfig.class)
 public interface PromotionMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "company", ignore = true)
+  @Mapping(target = "isEnabled", ignore = true)
   Promotion toEntity(PromotionRequestDTO dto);
 
   PromotionDetailDTO toDetailDTO(Promotion entity);
@@ -21,5 +21,6 @@ public interface PromotionMapper {
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "company", ignore = true)
+  @Mapping(target = "isEnabled", ignore = true)
   void updateEntityFromDTO(PromotionUpdateDTO dto, @MappingTarget Promotion entity);
 }

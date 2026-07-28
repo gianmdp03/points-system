@@ -6,10 +6,11 @@ import com.tech.point_system.dto.sale.SaleRequestDTO;
 import com.tech.point_system.model.Sale;
 import org.mapstruct.*;
 
-@Mapper(config = GlobalMapperConfig.class, uses = {CompanyMapper.class})
+@Mapper(config = GlobalMapperConfig.class)
 public interface SaleMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "company", ignore = true)
+    @Mapping(target = "user", ignore = true)
     Sale toEntity(SaleRequestDTO dto);
     SaleDetailDTO toDetailDTO(Sale entity);
     SaleListDTO toListDTO(Sale entity);

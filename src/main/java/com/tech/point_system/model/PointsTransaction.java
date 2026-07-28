@@ -19,7 +19,7 @@ public class PointsTransaction {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "points_account_id", nullable = false)
-    private PointsAccount account;
+    private PointsAccount pointsAccount;
 
     @Column(nullable = false)
     private Integer amount;

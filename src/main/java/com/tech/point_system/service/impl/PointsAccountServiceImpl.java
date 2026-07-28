@@ -173,7 +173,7 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     pointsAccount = pointsAccountRepository.save(pointsAccount);
 
     PointsTransaction transaction = new PointsTransaction();
-    transaction.setAccount(pointsAccount);
+    transaction.setPointsAccount(pointsAccount);
     transaction.setAmount(pointsToEarn);
     transaction.setTransactionType(TransactionType.EARNED);
     transaction.setCreatedAt(nowUtc);
@@ -203,7 +203,7 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     OffsetDateTime nowUtc = OffsetDateTime.now(ZoneOffset.UTC);
 
     PointsTransaction transaction = new PointsTransaction();
-    transaction.setAccount(account);
+    transaction.setPointsAccount(account);
     transaction.setAmount((event.costInPoints())*(-1));
     transaction.setTransactionType(TransactionType.REDEEMED);
     transaction.setCreatedAt(nowUtc);

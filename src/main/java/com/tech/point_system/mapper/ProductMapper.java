@@ -7,7 +7,7 @@ import com.tech.point_system.dto.product.ProductUpdateDTO;
 import com.tech.point_system.model.Product;
 import org.mapstruct.*;
 
-@Mapper(config = GlobalMapperConfig.class, uses = {CompanyMapper.class})
+@Mapper(config = GlobalMapperConfig.class)
 public interface ProductMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "company", ignore = true)

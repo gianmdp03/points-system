@@ -15,6 +15,10 @@ public interface CompanyMapper {
     @Mapping(target = "promotions", ignore = true)
     @Mapping(target = "rewards", ignore = true)
     @Mapping(target = "sales", ignore = true)
+    @Mapping(target = "pointsAccount", ignore = true)
+    @Mapping(target = "admin", ignore = true)
+    @Mapping(target = "isEnabled", ignore = true)
+    @Mapping(target = "disabledDate", ignore = true)
     Company toEntity(CompanyRequestDTO dto);
     CompanyDetailDTO toDetailDTO(Company entity);
     CompanyListDTO toListDTO(Company entity);
@@ -25,5 +29,9 @@ public interface CompanyMapper {
     @Mapping(target = "promotions", ignore = true)
     @Mapping(target = "rewards", ignore = true)
     @Mapping(target = "sales", ignore = true)
+    @Mapping(target = "pointsAccount", ignore = true)
+    @Mapping(target = "admin", ignore = true)
+    @Mapping(target = "isEnabled", ignore = true)
+    @Mapping(target = "disabledDate", ignore = true)
     void updateEntityFromDTO(CompanyUpdateDTO dto, @MappingTarget Company entity);
 }

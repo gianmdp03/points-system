@@ -69,7 +69,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Transactional
     public void disableCompany(String companyAdminId, Long companyId) {
         Company company = accessValidator.validateAccess(companyId, companyAdminId);
-        company.setEnabled(false);
+        company.setIsEnabled(false);
         company.setDisabledDate(OffsetDateTime.now(ZoneOffset.UTC));
         repository.save(company);
     }
@@ -78,7 +78,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Transactional
     public void enableCompany(String companyAdminId, Long companyId){
         Company company = accessValidator.validateAccess(companyId, companyAdminId);
-        company.setEnabled(true);
+        company.setIsEnabled(true);
         company.setDisabledDate(null);
     }
 }

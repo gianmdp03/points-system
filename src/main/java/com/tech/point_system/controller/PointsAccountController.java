@@ -32,7 +32,7 @@ public class PointsAccountController {
         .body(pointsAccountService.registerClientAndCreateAccount(jwt.getSubject(), dto));
   }
 
-  @GetMapping("/{companyId}")
+  @GetMapping("/{companyId}") //CHEQUEAR QUE INFORMACION SE MUESTRA
   public ResponseEntity<Page<PointsAccountDetailDTO>> listPointsAccounts(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, Pageable pageable) {
     return ResponseEntity.status(HttpStatus.OK).body(pointsAccountService.listPointsAccounts(jwt.getSubject(), companyId, pageable));
   }

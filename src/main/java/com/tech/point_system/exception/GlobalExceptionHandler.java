@@ -90,7 +90,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.CONFLICT.value(),
                 "This account is already being modified by another operation. Please try again.",
-                System.currentTimeMillis()
+                ex.getMessage()
         );
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
