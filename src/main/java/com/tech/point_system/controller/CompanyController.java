@@ -63,4 +63,21 @@ public class CompanyController {
         companyService.enableCompany(jwt.getSubject(), companyId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
+
+    @PreAuthorize("hasRole('COMPANY_ADMIN')")
+    @GetMapping("/my-companies")
+    public ResponseEntity<Page<CompanyListDTO>> listMyAdminCompanies(
+            @AuthenticationPrincipal Jwt jwt,
+            @PageableDefault(page = 0, size = 18, sort = "name", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(companyService.listAdminCompanies(jwt.getSubject(), pageable));
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/my-subscriptions")
+    public ResponseEntity<Page<CompanyListDTO>> listMySubscribedCompanies(
+            @AuthenticationPrincipal Jwt jwt,
+            @PageableDefault(page = 0, size = 18, sort = "name", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(companyService.listUserSubscribedCompanies(jwt.getSubject(), pageable));
+    }
 }

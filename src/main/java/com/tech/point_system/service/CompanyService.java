@@ -14,4 +14,7 @@ public interface CompanyService {
     CompanyDetailDTO getCompanyById(Long id);
     void disableCompany(String companyAdminId, Long companyId);
     void enableCompany(String companyAdminId, Long companyId);
+
+    Page<CompanyListDTO> listAdminCompanies(String adminId, Pageable pageable);
+    Page<CompanyListDTO> listUserSubscribedCompanies(String userId, Pageable pageable);
 }

@@ -81,4 +81,22 @@ public class CompanyServiceImpl implements CompanyService {
         company.setIsEnabled(true);
         company.setDisabledDate(null);
     }
+
+    @Override
+    public Page<CompanyListDTO> listAdminCompanies(String adminId, Pageable pageable) {
+        Page<Company> companies = repository.findByAdminId(adminId, pageable);
+        if(companies.isEmpty()) {
+            return Page.empty();
+        }
+        return companies.map(mapper::toListDTO);
+    }
+
+    @Override
+    public Page<CompanyListDTO> listUserSubscribedCompanies(String userId, Pageable pageable) {
+        Page<Company> companies = repository.findByPointsAccountsUserId(userId, pageable);
+        if(companies.isEmpty()) {
+            return Page.empty();
+        }
+        return companies.map(mapper::toListDTO);
+    }
 }
