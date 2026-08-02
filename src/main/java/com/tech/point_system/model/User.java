@@ -4,6 +4,7 @@ import com.tech.point_system._enum.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
@@ -37,7 +38,9 @@ public class User {
 
     private Boolean isFreeTrialOver;
 
-    private OffsetDateTime freeTrialStartTime;
+    private LocalDate freeTrialStartTime;
+
+    private LocalDate freeTrialEndTime;
 
     @Builder
     public User(String id, String email, String name, String dni, Role role) {
