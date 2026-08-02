@@ -4,7 +4,6 @@ import com.tech.point_system.dto.company.CompanyDetailDTO;
 import com.tech.point_system.dto.company.CompanyListDTO;
 import com.tech.point_system.dto.company.CompanyRequestDTO;
 import com.tech.point_system.dto.company.CompanyUpdateDTO;
-import com.tech.point_system.security.user._enum.Role;
 import com.tech.point_system.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

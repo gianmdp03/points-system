@@ -1,10 +1,10 @@
-package com.tech.point_system.security.user.service.impl;
+package com.tech.point_system.service.impl;
 
-import com.tech.point_system.security.user._enum.Role;
-import com.tech.point_system.security.user.dto.supabaseWebhook.SupabaseWebhookDTO;
-import com.tech.point_system.security.user.model.User;
-import com.tech.point_system.security.user.repository.UserRepository;
-import com.tech.point_system.security.user.service.WebhookService;
+import com.tech.point_system._enum.Role;
+import com.tech.point_system.dto.supabaseWebhook.SupabaseWebhookDTO;
+import com.tech.point_system.model.User;
+import com.tech.point_system.repository.UserRepository;
+import com.tech.point_system.service.WebhookService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,16 +48,31 @@ public class WebhookServiceImpl implements WebhookService {
 
         try {
             Map<String, Object> metadata = payload.record().rawUserMetaData();
-
             String name = extractFromMap(metadata, "name", "Usuario sin nombre");
             String dni = extractFromMap(metadata, "dni", "No registrado");
+
+            String requestedRoleStr = extractFromMap(metadata, "role", "USER");
+
+            Role assignedRole;
+            try {
+                Role roleEnum = Role.valueOf(requestedRoleStr.toUpperCase());
+                if (roleEnum == Role.APP_ADMIN) {
+                    log.warn("Intento de registro no permitido como APP_ADMIN para el email: {}. Asignando USER.", email);
+                    assignedRole = Role.USER;
+                } else {
+                    assignedRole = roleEnum;
+                }
+            } catch (IllegalArgumentException e) {
+                log.warn("Rol inválido ({}) para email: {}. Asignando USER por defecto.", requestedRoleStr, email);
+                assignedRole = Role.USER;
+            }
 
             User newUser = User.builder()
                     .id(userId)
                     .email(email)
                     .name(name)
                     .dni(dni)
-                    .role(Role.USER)
+                    .role(assignedRole)
                     .isActive(true)
                     .build();
 

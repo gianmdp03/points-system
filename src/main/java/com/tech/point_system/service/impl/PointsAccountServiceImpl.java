@@ -20,14 +20,13 @@ import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.PointsAccountRepository;
 import com.tech.point_system.repository.PointsTransactionRepository;
 import com.tech.point_system.repository.PromotionRepository;
-import com.tech.point_system.security.user._enum.Role;
-import com.tech.point_system.security.user.dto.user.UserDetailDTO;
-import com.tech.point_system.security.user.model.User;
-import com.tech.point_system.security.user.repository.UserRepository;
-import com.tech.point_system.security.user.service.CompanyAccessValidator;
-import com.tech.point_system.security.user.service.SupabaseAdminClient;
+import com.tech.point_system._enum.Role;
+import com.tech.point_system.dto.user.UserDetailDTO;
+import com.tech.point_system.model.User;
+import com.tech.point_system.repository.UserRepository;
+import com.tech.point_system.service.CompanyAccessValidator;
+import com.tech.point_system.service.SupabaseAdminClient;
 import com.tech.point_system.service.PointsAccountService;
-import com.tech.point_system.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -40,7 +39,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)

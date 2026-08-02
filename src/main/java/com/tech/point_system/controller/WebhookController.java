@@ -1,8 +1,8 @@
-package com.tech.point_system.security.user.controller;
+package com.tech.point_system.controller;
 
-import com.tech.point_system.security.user.dto.supabaseWebhook.SupabaseWebhookDTO;
+import com.tech.point_system.dto.supabaseWebhook.SupabaseWebhookDTO;
 // Asegúrate de importar el servicio o su interfaz correspondiente
-import com.tech.point_system.security.user.service.impl.WebhookServiceImpl;
+import com.tech.point_system.service.impl.WebhookServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

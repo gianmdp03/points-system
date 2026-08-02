@@ -9,7 +9,7 @@ import com.tech.point_system.mapper.ProductMapper;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.Product;
 import com.tech.point_system.repository.ProductRepository;
-import com.tech.point_system.security.user.service.CompanyAccessValidator;
+import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

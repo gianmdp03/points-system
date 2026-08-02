@@ -1,10 +1,10 @@
-package com.tech.point_system.security.user.service.impl;
+package com.tech.point_system.service.impl;
 
-import com.tech.point_system.security.user.dto.user.UserDetailDTO;
-import com.tech.point_system.security.user.mapper.UserMapper;
-import com.tech.point_system.security.user.model.User;
-import com.tech.point_system.security.user.repository.UserRepository;
-import com.tech.point_system.security.user.service.UserService;
+import com.tech.point_system.dto.user.UserDetailDTO;
+import com.tech.point_system.mapper.UserMapper;
+import com.tech.point_system.model.User;
+import com.tech.point_system.repository.UserRepository;
+import com.tech.point_system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,6 +1,5 @@
 package com.tech.point_system.service.impl;
 
-import com.tech.point_system.dto.product.ProductListDTO;
 import com.tech.point_system.dto.reward.RewardDetailDTO;
 import com.tech.point_system.dto.reward.RewardListDTO;
 import com.tech.point_system.dto.reward.RewardRequestDTO;
@@ -9,13 +8,12 @@ import com.tech.point_system.event.RewardRedeemEvent;
 import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.mapper.RewardMapper;
 import com.tech.point_system.model.Company;
-import com.tech.point_system.model.Product;
 import com.tech.point_system.model.Reward;
 import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.RewardRepository;
-import com.tech.point_system.security.user.model.User;
-import com.tech.point_system.security.user.repository.UserRepository;
-import com.tech.point_system.security.user.service.CompanyAccessValidator;
+import com.tech.point_system.model.User;
+import com.tech.point_system.repository.UserRepository;
+import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.RewardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,8 +21,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)

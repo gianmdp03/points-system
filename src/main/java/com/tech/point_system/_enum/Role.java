@@ -1,4 +1,4 @@
-package com.tech.point_system.security.user._enum;
+package com.tech.point_system._enum;
 
 public enum Role {
     USER,

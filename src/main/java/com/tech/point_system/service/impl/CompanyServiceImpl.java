@@ -8,9 +8,9 @@ import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.mapper.CompanyMapper;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.repository.CompanyRepository;
-import com.tech.point_system.security.user.model.User;
-import com.tech.point_system.security.user.repository.UserRepository;
-import com.tech.point_system.security.user.service.CompanyAccessValidator;
+import com.tech.point_system.model.User;
+import com.tech.point_system.repository.UserRepository;
+import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.CompanyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)

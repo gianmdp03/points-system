@@ -1,4 +1,4 @@
-package com.tech.point_system.security.user.dto.supabaseWebhook;
+package com.tech.point_system.dto.supabaseWebhook;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -1,4 +1,4 @@
-package com.tech.point_system.security.user.service;
+package com.tech.point_system.service;
 
 import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.model.Company;

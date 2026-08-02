@@ -10,7 +10,7 @@ import com.tech.point_system.model.Company;
 import com.tech.point_system.model.Promotion;
 import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.PromotionRepository;
-import com.tech.point_system.security.user.service.CompanyAccessValidator;
+import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

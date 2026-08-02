@@ -1,4 +1,4 @@
-package com.tech.point_system.security.config;
+package com.tech.point_system.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

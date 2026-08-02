@@ -1,7 +1,7 @@
-package com.tech.point_system.security.config;
+package com.tech.point_system.config;
 
-import com.tech.point_system.security.user.model.User;
-import com.tech.point_system.security.user.repository.UserRepository;
+import com.tech.point_system.model.User;
+import com.tech.point_system.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
