@@ -1,12 +1,11 @@
 package com.tech.point_system.service.impl;
 
+import com.tech.point_system._enum.AppAdminOwner;
+import com.tech.point_system._enum.Role;
 import com.tech.point_system._enum.TransactionType;
 import com.tech.point_system.extra.CompanyDetails;
 import com.tech.point_system.model.*;
 import com.tech.point_system.repository.*;
-import com.tech.point_system._enum.Role;
-import com.tech.point_system.model.User;
-import com.tech.point_system.repository.UserRepository;
 import com.tech.point_system.service.DataSeederService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -38,7 +38,6 @@ public class DataSeederServiceImpl implements DataSeederService {
         log.info("Iniciando la inspección de usuarios y carga de datos de prueba...");
 
         List<User> existingUsers = userRepository.findAll();
-
         if (existingUsers.isEmpty()) {
             throw new IllegalStateException("No hay usuarios en la BD. Registrá/sincronizá los usuarios desde Supabase primero.");
         }
@@ -65,6 +64,15 @@ public class DataSeederServiceImpl implements DataSeederService {
         User clientUser1 = clients.get(0);
         User clientUser2 = clients.size() > 1 ? clients.get(1) : clientUser1;
 
+        // Inicializar prueba gratuita para el Company Admin si no la tiene configurada
+        if (companyAdmin.getIsFreeTrialOver() == null) {
+            LocalDate today = LocalDate.now();
+            companyAdmin.setIsFreeTrialOver(false);
+            companyAdmin.setFreeTrialStartTime(today);
+            companyAdmin.setFreeTrialEndTime(today.plusDays(30));
+            userRepository.save(companyAdmin);
+        }
+
         // Logs descriptivos para validar en consola la asignación
         log.info("Clasificación de usuarios detectada:");
         log.info(" -> APP_ADMIN: {}", appAdmin != null ? appAdmin.getEmail() : "Sin asignar en BD");
@@ -80,6 +88,7 @@ public class DataSeederServiceImpl implements DataSeederService {
         company1.setAdmin(companyAdmin);
         company1.setAmountStep(new BigDecimal("100.00")); // Cada $100 -> 10 pts
         company1.setPointsPerStep(10);
+        company1.setAppAdminOwner(AppAdminOwner.GIANLUCA);
         company1.setIsEnabled(true);
         company1 = companyRepository.save(company1);
 
@@ -90,6 +99,7 @@ public class DataSeederServiceImpl implements DataSeederService {
         company2.setAdmin(companyAdmin);
         company2.setAmountStep(new BigDecimal("500.00")); // Cada $500 -> 25 pts
         company2.setPointsPerStep(25);
+        company2.setAppAdminOwner(AppAdminOwner.ORGANIC);
         company2.setIsEnabled(true);
         company2 = companyRepository.save(company2);
 
@@ -119,7 +129,6 @@ public class DataSeederServiceImpl implements DataSeederService {
 
         // 4. Promociones
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-
         Promotion promo1 = new Promotion();
         promo1.setName("Semana del Café 2x Puntos");
         promo1.setDescription("¡Duplica tus puntos en todas las compras esta semana!");
