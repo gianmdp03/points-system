@@ -72,7 +72,6 @@ public class PointsAccountServiceImpl implements PointsAccountService {
               .name(dto.name())
               .dni(dto.dni())
               .role(Role.USER)
-              .isActive(true)
               .build();
       user = userRepository.save(user);
     } else {
@@ -104,11 +103,9 @@ public class PointsAccountServiceImpl implements PointsAccountService {
         company.getId());
 
     CompanyListDTO companyDTO =
-        new CompanyListDTO(company.getId(), company.getName(), company.getCompanyDetails(), company.getAmountStep(), company.getPointsPerStep(), company.getIsEnabled());
+        new CompanyListDTO(company.getId(), company.getName(), company.getCompanyDetails(), company.getAmountStep(), company.getPointsPerStep(), company.getIsEnabled(), company.getAppAdminOwner());
 
-    UserDetailDTO userDTO =
-        new UserDetailDTO(
-            user.getId(), user.getEmail(), user.getName(), user.getDni(), user.getRole());
+    UserDetailDTO userDTO = new UserDetailDTO(user.getId(), user.getEmail(), user.getName(), user.getDni(), user.getRole(), null, null, null);
 
     return new PointsAccountDetailDTO(account.getId(), account.getBalance(), companyDTO, userDTO);
   }

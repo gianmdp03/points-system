@@ -73,7 +73,6 @@ public class WebhookServiceImpl implements WebhookService {
                     .name(name)
                     .dni(dni)
                     .role(assignedRole)
-                    .isActive(true)
                     .build();
 
             userRepository.save(newUser);
