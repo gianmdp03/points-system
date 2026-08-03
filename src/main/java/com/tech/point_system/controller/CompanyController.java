@@ -1,9 +1,6 @@
 package com.tech.point_system.controller;
 
-import com.tech.point_system.dto.company.CompanyDetailDTO;
-import com.tech.point_system.dto.company.CompanyListDTO;
-import com.tech.point_system.dto.company.CompanyRequestDTO;
-import com.tech.point_system.dto.company.CompanyUpdateDTO;
+import com.tech.point_system.dto.company.*;
 import com.tech.point_system.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -78,5 +75,11 @@ public class CompanyController {
             @AuthenticationPrincipal Jwt jwt,
             @PageableDefault(page = 0, size = 18, sort = "name", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(companyService.listUserSubscribedCompanies(jwt.getSubject(), pageable));
+    }
+
+    @PreAuthorize("hasRole('APP_ADMIN')")
+    @PatchMapping("/app-admin-owner")
+    public ResponseEntity<CompanyListDTO> setAppAdminOwner(@Valid @RequestBody AppAdminOwnerDTO dto){
+        return ResponseEntity.status(HttpStatus.OK).body(companyService.setAppAdminOwner(dto));
     }
 }

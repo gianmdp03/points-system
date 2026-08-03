@@ -1,9 +1,6 @@
 package com.tech.point_system.service;
 
-import com.tech.point_system.dto.company.CompanyDetailDTO;
-import com.tech.point_system.dto.company.CompanyListDTO;
-import com.tech.point_system.dto.company.CompanyRequestDTO;
-import com.tech.point_system.dto.company.CompanyUpdateDTO;
+import com.tech.point_system.dto.company.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -17,4 +14,5 @@ public interface CompanyService {
 
     Page<CompanyListDTO> listAdminCompanies(String adminId, Pageable pageable);
     Page<CompanyListDTO> listUserSubscribedCompanies(String userId, Pageable pageable);
+    CompanyListDTO setAppAdminOwner(AppAdminOwnerDTO dto);
 }

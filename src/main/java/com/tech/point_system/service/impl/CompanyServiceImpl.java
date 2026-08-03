@@ -1,9 +1,7 @@
 package com.tech.point_system.service.impl;
 
-import com.tech.point_system.dto.company.CompanyDetailDTO;
-import com.tech.point_system.dto.company.CompanyListDTO;
-import com.tech.point_system.dto.company.CompanyRequestDTO;
-import com.tech.point_system.dto.company.CompanyUpdateDTO;
+import com.tech.point_system._enum.AppAdminOwner;
+import com.tech.point_system.dto.company.*;
 import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.mapper.CompanyMapper;
 import com.tech.point_system.model.Company;
@@ -97,5 +95,13 @@ public class CompanyServiceImpl implements CompanyService {
             return Page.empty();
         }
         return companies.map(mapper::toListDTO);
+    }
+
+    @Override
+    @Transactional
+    public CompanyListDTO setAppAdminOwner(AppAdminOwnerDTO dto){
+        Company company = repository.findById(dto.companyId()).orElseThrow(()-> new NotFoundException("Company Not Found"));
+        company.setAppAdminOwner(dto.appAdminOwner());
+        return mapper.toListDTO(company);
     }
 }

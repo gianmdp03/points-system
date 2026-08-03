@@ -1,5 +1,6 @@
 package com.tech.point_system.model;
 
+import com.tech.point_system._enum.AppAdminOwner;
 import com.tech.point_system.extra.CompanyDetails;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -43,6 +44,9 @@ public class Company {
 
     @Column(nullable = false)
     private Integer pointsPerStep = 1;
+
+    @Enumerated(EnumType.STRING)
+    private AppAdminOwner appAdminOwner;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PointsAccount> pointsAccounts = new HashSet<>();

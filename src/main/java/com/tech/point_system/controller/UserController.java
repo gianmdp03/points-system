@@ -7,10 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -18,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
     private final UserService userService;
 
+    @PreAuthorize("hasAnyRole('USER', 'COMPANY_ADMIN', 'APP_ADMIN')")
     @GetMapping("/me")
     public ResponseEntity<UserDetailDTO> getMyProfile(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(userService.getUserById(jwt.getSubject()));
