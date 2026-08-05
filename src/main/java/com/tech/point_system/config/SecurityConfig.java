@@ -34,7 +34,7 @@ public class SecurityConfig {
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/webhooks/supabase").permitAll()
+                    .requestMatchers("/api/webhooks/**").permitAll()
                     .requestMatchers("/api/dev/**").permitAll()
                     .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(supabaseJwtConverter)));
