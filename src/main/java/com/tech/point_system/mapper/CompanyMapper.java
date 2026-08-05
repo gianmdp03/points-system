@@ -7,7 +7,7 @@ import com.tech.point_system.dto.company.CompanyUpdateDTO;
 import com.tech.point_system.model.Company;
 import org.mapstruct.*;
 
-@Mapper(config = GlobalMapperConfig.class, uses = {ProductMapper.class, PromotionMapper.class, RewardMapper.class, SaleMapper.class})
+@Mapper(config = GlobalMapperConfig.class, uses = {ProductMapper.class, PromotionMapper.class, RewardMapper.class, SaleMapper.class, PointsAccountMapper.class})
 public interface CompanyMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "pointsAccounts", ignore = true)
