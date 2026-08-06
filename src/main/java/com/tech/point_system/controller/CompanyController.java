@@ -40,7 +40,7 @@ public class CompanyController {
         return ResponseEntity.status(HttpStatus.OK).body(companyService.listCompanies(pageable));
     }
 
-    @PreAuthorize("hasRole('APP_ADMIN')")
+    @PreAuthorize("hasAnyRole('COMPANY_ADMIN', 'APP_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<CompanyDetailDTO> getCompanyById(@PathVariable Long id){
         return ResponseEntity.status(HttpStatus.OK).body(companyService.getCompanyById(id));
