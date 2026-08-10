@@ -37,7 +37,7 @@ public class ProductController {
     }
 
 
-    @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN'")
+    @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN')")
     @PutMapping("/{companyId}/{id}")
     public ResponseEntity<ProductDetailDTO> updateProduct(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id, @RequestBody ProductUpdateDTO dto){
 

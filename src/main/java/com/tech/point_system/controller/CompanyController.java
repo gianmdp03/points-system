@@ -21,11 +21,11 @@ import org.springframework.web.bind.annotation.*;
 public class CompanyController {
     private final CompanyService companyService;
 
-    @PreAuthorize("hasRole('APP_ADMIN')")
-    @PostMapping("/{userDni}")
-    public ResponseEntity<CompanyDetailDTO> addCompany(@PathVariable String userDni, @Valid @RequestBody CompanyRequestDTO dto)
+    @PreAuthorize("hasRole('COMPANY_ADMIN')")
+    @PostMapping
+    public ResponseEntity<CompanyDetailDTO> addCompany(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CompanyRequestDTO dto)
     {
-        return ResponseEntity.status(HttpStatus.CREATED).body(companyService.addCompany(userDni, dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(companyService.addCompany(jwt.getSubject(), dto));
     }
 
     @PreAuthorize("hasAnyRole('COMPANY_ADMIN','APP_ADMIN')")

@@ -33,7 +33,7 @@ public class RewardController {
     }
 
     @PutMapping("/{companyId}/{id}")
-    public ResponseEntity<RewardDetailDTO> updateReward(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id, RewardUpdateDTO dto){
+    public ResponseEntity<RewardDetailDTO> updateReward(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PathVariable Long id, @Valid @RequestBody RewardUpdateDTO dto){
         return ResponseEntity.ok(rewardService.updateReward(jwt.getSubject(), companyId, id, dto));
     }
 
