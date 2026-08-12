@@ -4,4 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
-public record SaleRequestDTO(@NotNull BigDecimal amount, @NotNull Long companyId, @NotBlank String userDni) {}
+public record SaleRequestDTO(
+        @NotNull BigDecimal amount,
+        @NotNull Long companyId,
+        @NotBlank String dni,
+        @NotBlank String country
+) {}

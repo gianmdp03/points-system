@@ -24,6 +24,7 @@ import java.util.List;
 public class DataSeederServiceImpl implements DataSeederService {
 
     private final UserRepository userRepository;
+    private final ClientRepository clientRepository;
     private final CompanyRepository companyRepository;
     private final ProductRepository productRepository;
     private final PromotionRepository promotionRepository;
@@ -53,16 +54,9 @@ public class DataSeederServiceImpl implements DataSeederService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No se encontró ningún usuario con rol COMPANY_ADMIN en la base de datos."));
 
-        List<User> clients = existingUsers.stream()
-                .filter(u -> u.getRole() == Role.USER)
-                .toList();
-
-        if (clients.isEmpty()) {
-            throw new IllegalStateException("No se encontraron usuarios con rol USER para actuar como clientes.");
-        }
-
-        User clientUser1 = clients.get(0);
-        User clientUser2 = clients.size() > 1 ? clients.get(1) : clientUser1;
+        // CREACIÓN DE CLIENTES REALES (Nueva Entidad Client)
+        Client client1 = clientRepository.getOrCreateClient("11111111", "Argentina", "Juan Perez", "juan@test.com", "123456789");
+        Client client2 = clientRepository.getOrCreateClient("22222222", "Argentina", "Maria Gomez", "maria@test.com", "987654321");
 
         // Inicializar prueba gratuita para el Company Admin si no la tiene configurada
         if (companyAdmin.getIsFreeTrialOver() == null) {
@@ -77,8 +71,8 @@ public class DataSeederServiceImpl implements DataSeederService {
         log.info("Clasificación de usuarios detectada:");
         log.info(" -> APP_ADMIN: {}", appAdmin != null ? appAdmin.getEmail() : "Sin asignar en BD");
         log.info(" -> COMPANY_ADMIN: {} ({})", companyAdmin.getEmail(), companyAdmin.getId());
-        log.info(" -> CLIENTE 1 (USER): {} ({})", clientUser1.getEmail(), clientUser1.getId());
-        log.info(" -> CLIENTE 2 (USER): {} ({})", clientUser2.getEmail(), clientUser2.getId());
+        log.info(" -> CLIENTE 1: {} ({})", client1.getEmail(), client1.getDni());
+        log.info(" -> CLIENTE 2: {} ({})", client2.getEmail(), client2.getDni());
 
         // 2. Crear Empresas administradas por el COMPANY_ADMIN real
         CompanyDetails details1 = new CompanyDetails("Argentina", "Buenos Aires", "CABA", "Av. Corrientes 1234", "1043");
@@ -137,7 +131,6 @@ public class DataSeederServiceImpl implements DataSeederService {
         promo1.setMultiplier(new BigDecimal("2.0"));
         promo1.setIsEnabled(true);
         promo1.setCompany(company1);
-
         promotionRepository.save(promo1);
 
         // 5. Premios (Rewards)
@@ -157,33 +150,33 @@ public class DataSeederServiceImpl implements DataSeederService {
 
         rewardRepository.saveAll(List.of(r1, r2));
 
-        // 6. Cuentas de Puntos asignadas a los usuarios con rol USER
+        // 6. Cuentas de Puntos asignadas a los clientes
         PointsAccount account1 = new PointsAccount();
-        account1.setUser(clientUser1);
+        account1.setClient(client1);
         account1.setCompany(company1);
         account1.setBalance(350);
         account1 = pointsAccountRepository.save(account1);
 
         PointsAccount account2 = new PointsAccount();
-        account2.setUser(clientUser2);
+        account2.setClient(client2);
         account2.setCompany(company1);
         account2.setBalance(120);
         account2 = pointsAccountRepository.save(account2);
 
         PointsAccount account3 = new PointsAccount();
-        account3.setUser(clientUser1);
+        account3.setClient(client1);
         account3.setCompany(company2);
         account3.setBalance(600);
         account3 = pointsAccountRepository.save(account3);
 
-        // 7. Registro de Ventas a Clientes (USER)
+        // 7. Registro de Ventas a Clientes
         Sale sale1 = new Sale();
-        sale1.setUser(clientUser1);
+        sale1.setClient(client1);
         sale1.setCompany(company1);
         sale1.setAmount(new BigDecimal("2500.00"));
 
         Sale sale2 = new Sale();
-        sale2.setUser(clientUser2);
+        sale2.setClient(client2);
         sale2.setCompany(company1);
         sale2.setAmount(new BigDecimal("1200.00"));
 
@@ -204,6 +197,6 @@ public class DataSeederServiceImpl implements DataSeederService {
 
         transactionRepository.saveAll(List.of(t1, t2));
 
-        log.info("¡Estructura de datos creada exitosamente vinculada a los roles exactos!");
+        log.info("¡Estructura de datos creada exitosamente vinculada a la nueva entidad Client!");
     }
 }

@@ -32,14 +32,14 @@ public class PointsAccountController {
         .body(pointsAccountService.registerClientAndCreateAccount(jwt.getSubject(), dto));
   }
 
-  @GetMapping("/{companyId}") //CHEQUEAR QUE INFORMACION SE MUESTRA
+  @PreAuthorize("hasRole('COMPANY_ADMIN')")
+  @GetMapping("/{companyId}")
   public ResponseEntity<Page<PointsAccountDetailDTO>> listPointsAccounts(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, Pageable pageable) {
     return ResponseEntity.status(HttpStatus.OK).body(pointsAccountService.listPointsAccounts(jwt.getSubject(), companyId, pageable));
   }
 
-  @PreAuthorize("hasRole('USER')")
-  @GetMapping("/history/{companyId}")
-  public ResponseEntity<Page<PointsTransactionDetailDTO>> getTransactionHistory(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-    return ResponseEntity.status(HttpStatus.OK).body(pointsAccountService.getTransactionHistory(jwt.getSubject(), companyId, pageable));
+  @GetMapping("/history/{clientId}/{companyId}")
+  public ResponseEntity<Page<PointsTransactionDetailDTO>> getTransactionHistory(@PathVariable Long clientId, @PathVariable Long companyId, @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+    return ResponseEntity.status(HttpStatus.OK).body(pointsAccountService.getTransactionHistory(clientId, companyId, pageable));
   }
 }

@@ -28,7 +28,7 @@ public class RewardController {
 
     @PostMapping("/redeem")
     public ResponseEntity<Void> redeemReward(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody RewardRedeemDTO dto) {
-        rewardService.redeemReward(jwt.getSubject(), dto.companyId(), dto.rewardId(), dto.userDni());
+        rewardService.redeemReward(jwt.getSubject(), dto.companyId(), dto.rewardId(), dto.dni(), dto.country());
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 

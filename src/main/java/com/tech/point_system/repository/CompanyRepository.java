@@ -13,5 +13,5 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     Page<Company> findByAdminId(String adminId, Pageable pageable);
 
-    Page<Company> findByPointsAccountsUserId(String userId, Pageable pageable);
+    Page<Company> findByPointsAccountsClientId(Long clientId, Pageable pageable);
 }

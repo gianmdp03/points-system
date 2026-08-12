@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
 
-    @PreAuthorize("hasAnyRole('USER', 'COMPANY_ADMIN', 'APP_ADMIN')")
+    @PreAuthorize("hasAnyRole('COMPANY_ADMIN', 'APP_ADMIN')")
     @GetMapping("/me")
     public ResponseEntity<UserDetailDTO> getMyProfile(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(userService.getUserById(jwt.getSubject()));

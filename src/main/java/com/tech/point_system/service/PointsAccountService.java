@@ -12,5 +12,5 @@ import org.springframework.data.domain.Pageable;
 public interface PointsAccountService {
     PointsAccountDetailDTO registerClientAndCreateAccount(String companyAdminId, PointsAccountRequestDTO dto);
     Page<PointsAccountDetailDTO> listPointsAccounts(String companyAdminId, Long companyId, Pageable pageable);
-    Page<PointsTransactionDetailDTO> getTransactionHistory(String userId, Long companyId, Pageable pageable);
+    Page<PointsTransactionDetailDTO> getTransactionHistory(Long clientId, Long companyId, Pageable pageable);
 }

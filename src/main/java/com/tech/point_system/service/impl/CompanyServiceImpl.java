@@ -89,8 +89,8 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public Page<CompanyListDTO> listUserSubscribedCompanies(String userId, Pageable pageable) {
-        Page<Company> companies = repository.findByPointsAccountsUserId(userId, pageable);
+    public Page<CompanyListDTO> listClientSubscribedCompanies(Long clientId, Pageable pageable) {
+        Page<Company> companies = repository.findByPointsAccountsClientId(clientId, pageable);
         if(companies.isEmpty()) {
             return Page.empty();
         }

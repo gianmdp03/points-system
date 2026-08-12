@@ -40,7 +40,7 @@ public class CompanyController {
         return ResponseEntity.status(HttpStatus.OK).body(companyService.listCompanies(pageable));
     }
 
-    @PreAuthorize("hasAnyRole('APP_ADMIN', 'COMPANY_ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('APP_ADMIN', 'COMPANY_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<CompanyDetailDTO> getCompanyById(@PathVariable Long id){
         return ResponseEntity.status(HttpStatus.OK).body(companyService.getCompanyById(id));
@@ -67,14 +67,6 @@ public class CompanyController {
             @AuthenticationPrincipal Jwt jwt,
             @PageableDefault(page = 0, size = 18, sort = "name", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(companyService.listAdminCompanies(jwt.getSubject(), pageable));
-    }
-
-    @PreAuthorize("hasRole('USER')")
-    @GetMapping("/my-subscriptions")
-    public ResponseEntity<Page<CompanyListDTO>> listMySubscribedCompanies(
-            @AuthenticationPrincipal Jwt jwt,
-            @PageableDefault(page = 0, size = 18, sort = "name", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(companyService.listUserSubscribedCompanies(jwt.getSubject(), pageable));
     }
 
     @PreAuthorize("hasRole('APP_ADMIN')")

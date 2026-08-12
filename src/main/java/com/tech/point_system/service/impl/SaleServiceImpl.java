@@ -6,8 +6,10 @@ import com.tech.point_system.dto.sale.SaleRequestDTO;
 import com.tech.point_system.event.SaleCreatedEvent;
 import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.mapper.SaleMapper;
+import com.tech.point_system.model.Client;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.Sale;
+import com.tech.point_system.repository.ClientRepository;
 import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.SaleRepository;
 import com.tech.point_system.model.User;
@@ -27,23 +29,26 @@ import org.springframework.transaction.annotation.Transactional;
 public class SaleServiceImpl implements SaleService {
   private final SaleRepository repository;
   private final SaleMapper mapper;
-  private final CompanyRepository companyRepository;
-  private final UserRepository userRepository;
+  private final ClientRepository clientRepository;
   private final CompanyAccessValidator companyAccessValidator;
   private final ApplicationEventPublisher applicationEventPublisher;
 
-  @Override
-  @Transactional
-  public SaleDetailDTO addSale(String companyAdminId, SaleRequestDTO dto) {
-    Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
-      User user = userRepository.findByDni(dto.userDni()).orElseThrow(()-> new NotFoundException("User not found"));
-      Sale sale = mapper.toEntity(dto);
-      sale.setCompany(company);
-      sale.setUser(user);
-      sale = repository.save(sale);
-      applicationEventPublisher.publishEvent(new SaleCreatedEvent(dto.amount(), company, user));
-      return mapper.toDetailDTO(sale);
-  }
+    @Override
+    @Transactional
+    public SaleDetailDTO addSale(String companyAdminId, SaleRequestDTO dto) {
+        Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
+
+        Client client = clientRepository.findByDniAndCountry(dto.dni(), dto.country())
+                .orElseThrow(()-> new NotFoundException("Client not found"));
+
+        Sale sale = mapper.toEntity(dto);
+        sale.setCompany(company);
+        sale.setClient(client);
+        sale = repository.save(sale);
+
+        applicationEventPublisher.publishEvent(new SaleCreatedEvent(dto.amount(), company, client));
+        return mapper.toDetailDTO(sale);
+    }
 
   @Override
   public Page<SaleListDTO> listCompaniesSales(String companyAdminId, Long companyId, Pageable pageable){

@@ -57,14 +57,14 @@ public class WebhookServiceImpl implements WebhookService {
             try {
                 Role roleEnum = Role.valueOf(requestedRoleStr.toUpperCase());
                 if (roleEnum == Role.APP_ADMIN) {
-                    log.warn("Intento de registro no permitido como APP_ADMIN para el email: {}. Asignando USER.", email);
-                    assignedRole = Role.USER;
+                    log.warn("Intento de registro no permitido como APP_ADMIN para el email: {}. Asignando COMPANY_ADMIN.", email);
+                    assignedRole = Role.COMPANY_ADMIN;
                 } else {
                     assignedRole = roleEnum;
                 }
             } catch (IllegalArgumentException e) {
-                log.warn("Rol inválido ({}) para email: {}. Asignando USER por defecto.", requestedRoleStr, email);
-                assignedRole = Role.USER;
+                log.warn("Rol inválido ({}) para email: {}. Asignando COMPANY_ADMIN por defecto.", requestedRoleStr, email);
+                assignedRole = Role.COMPANY_ADMIN;
             }
 
             User newUser = User.builder()

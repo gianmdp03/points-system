@@ -7,8 +7,10 @@ import com.tech.point_system.dto.reward.RewardUpdateDTO;
 import com.tech.point_system.event.RewardRedeemEvent;
 import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.mapper.RewardMapper;
+import com.tech.point_system.model.Client;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.Reward;
+import com.tech.point_system.repository.ClientRepository;
 import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.RewardRepository;
 import com.tech.point_system.model.User;
@@ -27,11 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class RewardServiceImpl implements RewardService {
     private final RewardRepository rewardRepository;
-    private final CompanyRepository companyRepository;
+    private final ClientRepository clientRepository;
     private final RewardMapper rewardMapper;
     private final CompanyAccessValidator companyAccessValidator;
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -49,11 +50,16 @@ public class RewardServiceImpl implements RewardService {
 
     @Override
     @Transactional
-    public void redeemReward(String companyAdminId, Long companyId, Long id, String userDni){
+    public void redeemReward(String companyAdminId, Long companyId, Long id, String dni, String country){
         Company company = companyAccessValidator.validateAccess(companyId, companyAdminId);
-        User user = userRepository.findByDni(userDni).orElseThrow(()-> new NotFoundException("User not found"));
-        Reward reward = rewardRepository.findByIdAndCompanyId(id, companyId).orElseThrow(()-> new NotFoundException("Reward not found"));
-        applicationEventPublisher.publishEvent(new RewardRedeemEvent(reward.getCostInPoints(), company, user));
+
+        Client client = clientRepository.findByDniAndCountry(dni, country)
+                .orElseThrow(()-> new NotFoundException("Client not found"));
+
+        Reward reward = rewardRepository.findByIdAndCompanyId(id, companyId)
+                .orElseThrow(()-> new NotFoundException("Reward not found"));
+
+        applicationEventPublisher.publishEvent(new RewardRedeemEvent(reward.getCostInPoints(), company, client));
     }
 
     @Override

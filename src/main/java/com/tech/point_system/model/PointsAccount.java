@@ -11,15 +11,15 @@ import lombok.Setter;
 @NoArgsConstructor
 @Table(
     name = "points_accounts",
-    uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "company_id"})})
+    uniqueConstraints = {@UniqueConstraint(columnNames = {"client_id", "company_id"})})
 public class PointsAccount {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id", nullable = false)
-  private User user;
+  @JoinColumn(name = "client_id", nullable = false)
+  private Client client;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "company_id", nullable = false)

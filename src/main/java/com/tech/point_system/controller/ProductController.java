@@ -30,7 +30,7 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.addProduct(jwt.getSubject(), dto));
     }
     
-    @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN' , 'USER')")
+    @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN')")
     @GetMapping("/{companyId}")
     public ResponseEntity<Page<ProductListDTO>> listProducts(@AuthenticationPrincipal Jwt jwt, @PathVariable Long companyId, @PageableDefault(page = 0, size = 12) Pageable pageable){
         return ResponseEntity.ok(productService.listProducts(jwt.getSubject(), companyId, pageable));
@@ -44,7 +44,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProduct(jwt.getSubject(), companyId, id, dto));
     }
 
-    @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN' , 'USER')")
+    @PreAuthorize("hasAnyRole('COMPANY_ADMIN' , 'APP_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ProductDetailDTO> getProductById(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(jwt.getSubject(), id));

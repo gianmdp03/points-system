@@ -18,8 +18,8 @@ public class Sale {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "client_id")
+    private Client client;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;

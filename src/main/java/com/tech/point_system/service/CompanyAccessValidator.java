@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class CompanyAccessValidator {
-
     private final CompanyRepository companyRepository;
 
     public Company validateAccess(Long companyId, String userId) {
@@ -22,15 +21,11 @@ public class CompanyAccessValidator {
                 .orElseThrow(() -> new NotFoundException("Company not found"));
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
         boolean isAppAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_APP_ADMIN"));
 
-        boolean isUser = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_USER"));
-
-        if (isAppAdmin || isUser) {
-            log.info("Acceso concedido por rol {} a la empresa {}", isAppAdmin ? "APP_ADMIN" : "USER", companyId);
+        if (isAppAdmin) {
+            log.info("Acceso concedido por rol APP_ADMIN a la empresa {}", companyId);
             return company;
         }
 
@@ -38,7 +33,6 @@ public class CompanyAccessValidator {
             log.warn("Intento de vulnerabilidad IDOR bloqueado. El usuario {} intentó acceder a la empresa {}", userId, companyId);
             throw new AccessDeniedException("Acceso denegado: No tienes permisos para modificar los datos de esta empresa");
         }
-
         return company;
     }
 

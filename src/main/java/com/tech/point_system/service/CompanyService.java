@@ -13,6 +13,6 @@ public interface CompanyService {
     void enableCompany(String companyAdminId, Long companyId);
 
     Page<CompanyListDTO> listAdminCompanies(String adminId, Pageable pageable);
-    Page<CompanyListDTO> listUserSubscribedCompanies(String userId, Pageable pageable);
+    Page<CompanyListDTO> listClientSubscribedCompanies(Long clientId, Pageable pageable);
     CompanyListDTO setAppAdminOwner(AppAdminOwnerDTO dto);
 }
