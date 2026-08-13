@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface CompanyRepository extends JpaRepository<Company, Long> {
     List<Company> findByIsEnabledFalseAndDisabledDateBefore(OffsetDateTime thresholdDate);
-
+    List<Company> findAllByAdminId(String adminId);
     Page<Company> findByAdminId(String adminId, Pageable pageable);
 
     Page<Company> findByPointsAccountsClientId(Long clientId, Pageable pageable);

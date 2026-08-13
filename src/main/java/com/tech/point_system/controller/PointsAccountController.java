@@ -3,7 +3,6 @@ package com.tech.point_system.controller;
 import com.tech.point_system.dto.pointsAccount.PointsAccountDetailDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountRequestDTO;
 import com.tech.point_system.dto.pointsTransaction.PointsTransactionDetailDTO;
-import com.tech.point_system.model.PointsTransaction;
 import com.tech.point_system.service.PointsAccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +26,9 @@ public class PointsAccountController {
   @PreAuthorize("hasRole('COMPANY_ADMIN')")
   @PostMapping
   public ResponseEntity<PointsAccountDetailDTO> registerClientAndCreateAccount(
-      @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody PointsAccountRequestDTO dto) {
+          @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody PointsAccountRequestDTO dto) {
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(pointsAccountService.registerClientAndCreateAccount(jwt.getSubject(), dto));
+            .body(pointsAccountService.registerClientAndCreateAccount(jwt.getSubject(), dto));
   }
 
   @PreAuthorize("hasRole('COMPANY_ADMIN')")
@@ -38,6 +37,7 @@ public class PointsAccountController {
     return ResponseEntity.status(HttpStatus.OK).body(pointsAccountService.listPointsAccounts(jwt.getSubject(), companyId, pageable));
   }
 
+  @PreAuthorize("hasRole('COMPANY_ADMIN')")
   @GetMapping("/history/{clientId}/{companyId}")
   public ResponseEntity<Page<PointsTransactionDetailDTO>> getTransactionHistory(@PathVariable Long clientId, @PathVariable Long companyId, @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
     return ResponseEntity.status(HttpStatus.OK).body(pointsAccountService.getTransactionHistory(clientId, companyId, pageable));

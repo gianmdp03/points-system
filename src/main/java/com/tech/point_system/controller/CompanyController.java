@@ -23,8 +23,7 @@ public class CompanyController {
 
     @PreAuthorize("hasRole('COMPANY_ADMIN')")
     @PostMapping
-    public ResponseEntity<CompanyDetailDTO> addCompany(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CompanyRequestDTO dto)
-    {
+    public ResponseEntity<CompanyDetailDTO> addCompany(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CompanyRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(companyService.addCompany(jwt.getSubject(), dto));
     }
 
@@ -59,7 +58,6 @@ public class CompanyController {
         companyService.enableCompany(jwt.getSubject(), companyId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
-
 
     @PreAuthorize("hasRole('COMPANY_ADMIN')")
     @GetMapping("/my-companies")

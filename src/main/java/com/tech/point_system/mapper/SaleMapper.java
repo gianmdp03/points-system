@@ -10,8 +10,9 @@ import org.mapstruct.*;
 public interface SaleMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "company", ignore = true)
-    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "client", ignore = true)
     Sale toEntity(SaleRequestDTO dto);
+
     SaleDetailDTO toDetailDTO(Sale entity);
     SaleListDTO toListDTO(Sale entity);
 }

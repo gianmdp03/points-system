@@ -19,4 +19,12 @@ public class AiServiceImpl implements AiService {
                         "'Lo siento, soy un asistente exclusivo del sistema de puntos y solo puedo ayudarte con temas relacionados a esta aplicación.'")
                 .build();
     }
+
+    @Override
+    public String chat(String message) {
+        return this.chatClient.prompt()
+                .user(message)
+                .call()
+                .content();
+    }
 }
