@@ -15,10 +15,19 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
     Page<Promotion> findByCompanyId(Long companyId, Pageable pageable);
 
     List<Promotion> findByIsEnabledTrueAndEndDateBefore(OffsetDateTime now);
+
     @Query("SELECT p FROM Promotion p WHERE p.company.id = :companyId " +
             "AND p.isEnabled = true " +
             "AND p.startDate <= :now AND p.endDate >= :now")
     Optional<Promotion> findActivePromotion(
+            @Param("companyId") Long companyId,
+            @Param("now") OffsetDateTime now
+    );
+
+    @Query("SELECT p FROM Promotion p WHERE p.company.id = :companyId " +
+            "AND p.isEnabled = true " +
+            "AND p.startDate <= :now AND p.endDate >= :now")
+    List<Promotion> findActivePromotions(
             @Param("companyId") Long companyId,
             @Param("now") OffsetDateTime now
     );
