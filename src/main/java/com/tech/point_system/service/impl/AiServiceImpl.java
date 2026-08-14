@@ -1,5 +1,6 @@
 package com.tech.point_system.service.impl;
 
+import com.tech.point_system.config.PointlyToolsConfig;
 import com.tech.point_system.service.AiService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.ChatOptions;
@@ -9,9 +10,8 @@ import org.springframework.stereotype.Service;
 public class AiServiceImpl implements AiService {
 
     private final ChatClient chatClient;
-
     private static final String OUT_OF_SCOPE_MESSAGE =
-            "Lo siento, soy un asistente exclusivo del sistema de puntos y solo puedo ayudarte con temas relacionados a esta aplicación.";
+            "Lo siento, soy un asistente exclusivo del sistema de puntos y solo puedo ayudarte con temas relacionados a esta aplicaci n.";
 
     private static final String SYSTEM_PROMPT = """
         [ROL Y OBJETIVO]
@@ -37,10 +37,10 @@ public class AiServiceImpl implements AiService {
         3. Jamás inventes datos numéricos de saldos o premios sin haber ejecutado primero las herramientas correspondientes.
         """.formatted(OUT_OF_SCOPE_MESSAGE);
 
-    public AiServiceImpl(ChatClient.Builder chatClientBuilder) {
+    public AiServiceImpl(ChatClient.Builder chatClientBuilder, PointlyToolsConfig pointlyTools) {
         this.chatClient = chatClientBuilder
                 .defaultSystem(SYSTEM_PROMPT)
-                .defaultTools("getPointsBalance", "getAvailableRewards", "getActivePromotions")
+                .defaultTools(pointlyTools)
                 .defaultOptions(ChatOptions.builder()
                         .temperature(0.0))
                 .build();
@@ -51,7 +51,6 @@ public class AiServiceImpl implements AiService {
         if (message == null || message.trim().isEmpty()) {
             return OUT_OF_SCOPE_MESSAGE;
         }
-
         return this.chatClient.prompt()
                 .user(message)
                 .call()
