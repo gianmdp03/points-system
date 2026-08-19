@@ -10,6 +10,7 @@ import com.tech.point_system.model.User;
 import com.tech.point_system.repository.UserRepository;
 import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.CompanyService;
+import com.tech.point_system.service.PlanValidatorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,10 +28,13 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyMapper mapper;
     private final UserRepository userRepository;
     private final CompanyAccessValidator accessValidator;
+    private final PlanValidatorService planValidatorService;
 
     @Override
     @Transactional
     public CompanyDetailDTO addCompany(String companyAdminId, CompanyRequestDTO dto) {
+        int currentCompanies = repository.findAllByAdminId(companyAdminId).size();
+        planValidatorService.validateCompanyCreation(companyAdminId, currentCompanies);
         Company company = mapper.toEntity(dto);
         User user = userRepository.findById(companyAdminId).orElseThrow(()-> new NotFoundException("Company Admin Not Found"));
         company.setAdmin(user);

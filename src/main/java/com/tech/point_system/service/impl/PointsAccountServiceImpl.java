@@ -18,6 +18,7 @@ import com.tech.point_system.repository.*;
 import com.tech.point_system._enum.Role;
 import com.tech.point_system.dto.user.UserDetailDTO;
 import com.tech.point_system.service.CompanyAccessValidator;
+import com.tech.point_system.service.PlanValidatorService;
 import com.tech.point_system.service.SupabaseAdminClient;
 import com.tech.point_system.service.PointsAccountService;
 import lombok.RequiredArgsConstructor;
@@ -45,13 +46,16 @@ public class PointsAccountServiceImpl implements PointsAccountService {
   private final PointsTransactionRepository transactionRepository;
   private final CompanyAccessValidator companyAccessValidator;
   private final PointsTransactionMapper transactionMapper;
+  private final PlanValidatorService planValidatorService;
 
   @Override
   @Transactional
   public PointsAccountDetailDTO registerClientAndCreateAccount(String companyAdminId, PointsAccountRequestDTO dto) {
     Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
 
-    // Usamos el Helper del Repo
+    long currentClients = pointsAccountRepository.countByCompanyId(company.getId());
+    planValidatorService.validateClientCreation(companyAdminId, (int) currentClients);
+
     Client client = clientRepository.getOrCreateClient(dto.dni(), dto.country(), dto.name(), dto.email(), dto.phone());
 
     if (pointsAccountRepository.findByClientIdAndCompanyId(client.getId(), company.getId()).isPresent()) {

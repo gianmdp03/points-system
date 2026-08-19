@@ -16,6 +16,7 @@ import com.tech.point_system.repository.RewardRepository;
 import com.tech.point_system.model.User;
 import com.tech.point_system.repository.UserRepository;
 import com.tech.point_system.service.CompanyAccessValidator;
+import com.tech.point_system.service.PlanValidatorService;
 import com.tech.point_system.service.RewardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -33,11 +34,15 @@ public class RewardServiceImpl implements RewardService {
     private final RewardMapper rewardMapper;
     private final CompanyAccessValidator companyAccessValidator;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final PlanValidatorService planValidatorService;
 
     @Override
     @Transactional
     public RewardDetailDTO addReward(String companyAdminId, RewardRequestDTO dto) {
         Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
+
+        int currentRewards = rewardRepository.findByCompanyId(company.getId()).size();
+        planValidatorService.validateRewardCreation(companyAdminId, currentRewards);
 
         Reward reward = rewardMapper.toEntity(dto);
 

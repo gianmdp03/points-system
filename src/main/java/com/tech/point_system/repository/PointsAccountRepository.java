@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface PointsAccountRepository extends JpaRepository<PointsAccount, Long> {
     Optional<PointsAccount> findByClientIdAndCompanyId(Long clientId, Long companyId);
     Page<PointsAccount> findByCompanyId(Long companyId, Pageable pageable);
+    long countByCompanyId(Long companyId);
 }

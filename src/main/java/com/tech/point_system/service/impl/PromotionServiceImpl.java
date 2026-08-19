@@ -11,6 +11,7 @@ import com.tech.point_system.model.Promotion;
 import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.PromotionRepository;
 import com.tech.point_system.service.CompanyAccessValidator;
+import com.tech.point_system.service.PlanValidatorService;
 import com.tech.point_system.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,11 +28,15 @@ public class PromotionServiceImpl implements PromotionService {
   private final CompanyRepository companyRepository;
   private final PromotionMapper promotionMapper;
   private final CompanyAccessValidator companyAccessValidator;
+  private final PlanValidatorService planValidatorService;
+
 
   @Override
   @Transactional
   public PromotionDetailDTO addPromotion(String companyAdminId, PromotionRequestDTO dto) {
     Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
+
+    planValidatorService.validatePromotionCreation(companyAdminId);
 
     Promotion promotion = promotionMapper.toEntity(dto);
 
