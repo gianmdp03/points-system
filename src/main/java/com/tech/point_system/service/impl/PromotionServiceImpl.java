@@ -14,6 +14,7 @@ import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.PlanValidatorService;
 import com.tech.point_system.service.PromotionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,42 +31,37 @@ public class PromotionServiceImpl implements PromotionService {
   private final CompanyAccessValidator companyAccessValidator;
   private final PlanValidatorService planValidatorService;
 
-
   @Override
   @Transactional
+  @CacheEvict(value = "company_active_promotions", key = "#dto.companyId()")
   public PromotionDetailDTO addPromotion(String companyAdminId, PromotionRequestDTO dto) {
     Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
 
     planValidatorService.validatePromotionCreation(companyAdminId);
 
     Promotion promotion = promotionMapper.toEntity(dto);
-
     promotion.setCompany(company);
 
     Promotion savedPromotion = promotionRepository.save(promotion);
-
     return promotionMapper.toDetailDTO(savedPromotion);
   }
 
   @Override
   @Transactional
+  @CacheEvict(value = "company_active_promotions", key = "#companyId")
   public PromotionDetailDTO updatePromotion(String companyAdminId, Long companyId, Long id, PromotionUpdateDTO dto) {
     companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
-    Promotion promotion =
-        promotionRepository
-            .findByIdAndCompanyId(id, companyId)
+    Promotion promotion = promotionRepository.findByIdAndCompanyId(id, companyId)
             .orElseThrow(() -> new NotFoundException("Promotion not found"));
 
     promotionMapper.updateEntityFromDTO(dto, promotion);
-
     Promotion updatedPromotion = promotionRepository.save(promotion);
-
     return promotionMapper.toDetailDTO(updatedPromotion);
   }
 
   @Override
   public Page<PromotionListDTO> listPromotions(String companyAdminId, Long companyId, Pageable pageable) {
-      companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+    companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
     Page<Promotion> promotions = promotionRepository.findByCompanyId(companyId, pageable);
     if (promotions.isEmpty()) {
       return Page.empty();
@@ -75,20 +71,19 @@ public class PromotionServiceImpl implements PromotionService {
 
   @Override
   public PromotionDetailDTO getPromotionById(String companyAdminId, Long companyId, Long id) {
-      companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
-    Promotion promotion =
-        promotionRepository
-            .findByIdAndCompanyId(id, companyId)
+    companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+    Promotion promotion = promotionRepository.findByIdAndCompanyId(id, companyId)
             .orElseThrow(() -> new NotFoundException("Promotion not found"));
-
     return promotionMapper.toDetailDTO(promotion);
   }
 
   @Override
   @Transactional
+  @CacheEvict(value = "company_active_promotions", key = "#companyId")
   public void enabledOrDisabled(String companyAdminId, Long companyId, Long id) {
     companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
-    Promotion promotion = promotionRepository.findByIdAndCompanyId(id, companyId).orElseThrow(() -> new NotFoundException("Promotion not found"));
+    Promotion promotion = promotionRepository.findByIdAndCompanyId(id, companyId)
+            .orElseThrow(() -> new NotFoundException("Promotion not found"));
     promotion.setIsEnabled(!promotion.getIsEnabled());
     promotionRepository.save(promotion);
   }

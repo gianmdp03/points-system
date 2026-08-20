@@ -13,11 +13,11 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
     default Client getOrCreateClient(String dni, String country, String name, String email, String phone) {
         return findByDniAndCountry(dni, country).orElseGet(() -> {
             Client newClient = new Client();
-            newClient.setDni(dni);
-            newClient.setCountry(country);
-            newClient.setName(name);
-            newClient.setEmail(email);
-            newClient.setPhone(phone);
+            newClient.setDni(dni != null ? dni.trim() : "");
+            newClient.setCountry(country != null ? country.trim() : "Argentina");
+            newClient.setName(name != null ? name.trim() : "");
+            newClient.setEmail(email != null && !email.isBlank() ? email.trim() : null);
+            newClient.setPhone(phone != null && !phone.isBlank() ? phone.trim() : null);
             return save(newClient);
         });
     }

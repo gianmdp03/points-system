@@ -12,6 +12,7 @@ import com.tech.point_system.repository.ProductRepository;
 import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,15 +28,14 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   @Transactional
+  @CacheEvict(value = "public_company_products", key = "#dto.companyId()")
   public ProductDetailDTO addProduct(String companyAdminId, ProductRequestDTO dto) {
     Company company = companyAccessValidator.validateAccess(dto.companyId(), companyAdminId);
 
     Product product = productMapper.toEntity(dto);
-
     product.setCompany(company);
 
     Product savedProduct = productRepository.save(product);
-
     return productMapper.toDetailDTO(savedProduct);
   }
 
@@ -46,40 +46,34 @@ public class ProductServiceImpl implements ProductService {
     if (products.isEmpty()) {
       return Page.empty();
     }
-
     return products.map(productMapper::toListDTO);
   }
 
   @Override
   @Transactional
+  @CacheEvict(value = "public_company_products", key = "#companyId")
   public ProductDetailDTO updateProduct(String companyAdminId, Long companyId, Long id, ProductUpdateDTO dto) {
     companyAccessValidator.validateAccess(companyId, companyAdminId);
-    Product product =
-        productRepository
-            .findByIdAndCompanyId(id, companyId)
+    Product product = productRepository.findByIdAndCompanyId(id, companyId)
             .orElseThrow(() -> new NotFoundException("Product not found"));
 
     productMapper.updateEntityFromDTO(dto, product);
-
     Product updatedProduct = productRepository.save(product);
-
     return productMapper.toDetailDTO(updatedProduct);
   }
 
   @Override
   public ProductDetailDTO getProductById(String companyAdminId, Long id) {
-    Product product =
-        productRepository
-            .findById(id)
+    Product product = productRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Product not found"));
 
     companyAccessValidator.validateAccess(product.getCompany().getId(), companyAdminId);
-
     return productMapper.toDetailDTO(product);
   }
 
   @Override
   @Transactional
+  @CacheEvict(value = "public_company_products", key = "#companyId")
   public void deleteProduct(String companyAdminId, Long companyId, Long id) {
     companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
     productRepository.deleteById(id);

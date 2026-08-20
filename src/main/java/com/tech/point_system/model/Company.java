@@ -18,7 +18,14 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "companies")
+@Table(
+        name = "companies",
+        indexes = {
+                @Index(name = "idx_company_user_id", columnList = "user_id"),
+                @Index(name = "idx_company_enabled_disabled", columnList = "isEnabled, disabledDate"),
+                @Index(name = "idx_company_purge_status", columnList = "isInactiveClientPurgeEnabled, inactiveClientPurgeDays")
+        }
+)
 public class Company {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,6 +51,16 @@ public class Company {
 
     @Column(nullable = false)
     private Integer pointsPerStep = 1;
+
+    @Column(nullable = false)
+    private Boolean isPointsExpirationEnabled = false;
+
+    private Integer pointsExpirationDays;
+
+    @Column(nullable = false)
+    private Boolean isInactiveClientPurgeEnabled = false;
+
+    private Integer inactiveClientPurgeDays;
 
     @Enumerated(EnumType.STRING)
     private AppAdminOwner appAdminOwner;

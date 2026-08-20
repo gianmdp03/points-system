@@ -67,8 +67,8 @@ public class GlobalExceptionHandler {
     ErrorResponse error =
         new ErrorResponse(
             HttpStatus.CONFLICT.value(),
-            "Conflicto de reserva",
-            "Lo sentimos, este turno acaba de ser reservado por otra persona hace instantes. Por favor, seleccioná otro horario.");
+            "Conflicto de datos",
+            "No se pudo completar la operación debido a un conflicto de integridad o registros duplicados.");
     return new ResponseEntity<>(error, HttpStatus.CONFLICT);
   }
 
@@ -86,13 +86,13 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
   }
 
-    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-    public ResponseEntity<ErrorResponse> handleOptimisticLockingException(ObjectOptimisticLockingFailureException ex) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                "This account is already being modified by another operation. Please try again.",
-                ex.getMessage()
-        );
-        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
-    }
+  @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+  public ResponseEntity<ErrorResponse> handleOptimisticLockingException(ObjectOptimisticLockingFailureException ex) {
+    ErrorResponse error = new ErrorResponse(
+        HttpStatus.CONFLICT.value(),
+        "This account is already being modified by another operation. Please try again.",
+        ex.getMessage()
+    );
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
 }

@@ -17,6 +17,10 @@ public record CompanyPublicDetailDTO(
         Boolean isEnabled,
         Integer clientBalance,
         String clientName,
+        Boolean isPointsExpirationEnabled,
+        Integer pointsExpirationDays,
+        Boolean isInactiveClientPurgeEnabled,
+        Integer inactiveClientPurgeDays,
         List<ProductListDTO> products,
         List<PromotionListDTO> activePromotions,
         List<RewardListDTO> rewards

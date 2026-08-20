@@ -11,6 +11,7 @@ public interface SaleMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "company", ignore = true)
     @Mapping(target = "client", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
     Sale toEntity(SaleRequestDTO dto);
 
     SaleDetailDTO toDetailDTO(Sale entity);

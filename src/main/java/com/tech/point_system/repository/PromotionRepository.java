@@ -32,5 +32,15 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
             @Param("now") OffsetDateTime now
     );
 
+    @Query("SELECT COUNT(p) > 0 FROM Promotion p WHERE p.company.id = :companyId " +
+            "AND p.isEnabled = true " +
+            "AND p.startDate <= :now AND p.endDate >= :now")
+    boolean existsActivePromotion(
+            @Param("companyId") Long companyId,
+            @Param("now") OffsetDateTime now
+    );
+
     Optional<Promotion> findByIdAndCompanyId(Long id, Long companyId);
+    long countByCompanyId(Long companyId);
+    long countByCompanyIdAndIsEnabledTrue(Long companyId);
 }

@@ -11,7 +11,14 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "points_transactions")
+@Table(
+        name = "points_transactions",
+        indexes = {
+                @Index(name = "idx_points_tx_fifo_lookup", columnList = "points_account_id, transactionType, availableAmount, createdAt"),
+                @Index(name = "idx_points_tx_expiration", columnList = "transactionType, expiresAt, availableAmount"),
+                @Index(name = "idx_points_tx_account_id", columnList = "points_account_id")
+        }
+)
 public class PointsTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +30,10 @@ public class PointsTransaction {
 
     @Column(nullable = false)
     private Integer amount;
+
+    private Integer availableAmount;
+
+    private OffsetDateTime expiresAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

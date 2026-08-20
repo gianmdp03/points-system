@@ -44,6 +44,7 @@ public class SaleServiceImpl implements SaleService {
         Sale sale = mapper.toEntity(dto);
         sale.setCompany(company);
         sale.setClient(client);
+        sale.setCreatedAt(java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC));
         sale = repository.save(sale);
 
         applicationEventPublisher.publishEvent(new SaleCreatedEvent(dto.amount(), company, client));

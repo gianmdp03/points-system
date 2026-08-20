@@ -12,7 +12,12 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "promotions")
+@Table(
+        name = "promotions",
+        indexes = {
+                @Index(name = "idx_promotion_active_lookup", columnList = "company_id, isEnabled, startDate, endDate")
+        }
+)
 public class Promotion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

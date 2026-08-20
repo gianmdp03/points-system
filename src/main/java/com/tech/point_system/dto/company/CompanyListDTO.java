@@ -5,5 +5,17 @@ import com.tech.point_system.extra.CompanyDetails;
 
 import java.math.BigDecimal;
 
-public record CompanyListDTO(Long id, String name, CompanyDetails companyDetails, BigDecimal amountStep, Integer pointsPerStep, Boolean isEnabled, AppAdminOwner appAdminOwner) {
+public record CompanyListDTO(
+        Long id,
+        String name,
+        CompanyDetails companyDetails,
+        BigDecimal amountStep,
+        Integer pointsPerStep,
+        Boolean isEnabled,
+        AppAdminOwner appAdminOwner,
+        Boolean isPointsExpirationEnabled,
+        Integer pointsExpirationDays,
+        Boolean isInactiveClientPurgeEnabled,
+        Integer inactiveClientPurgeDays
+) {
 }

@@ -13,4 +13,6 @@ public interface RewardRepository extends JpaRepository<Reward, Long> {
     List<Reward> findByCompanyId(Long companyId);
     List<Reward> findByCompanyIdAndIsEnabledTrue(Long companyId);
     Optional<Reward> findByIdAndCompanyId(Long id, Long companyId);
+    long countByCompanyId(Long companyId);
+    long countByCompanyIdAndIsEnabledTrue(Long companyId);
 }

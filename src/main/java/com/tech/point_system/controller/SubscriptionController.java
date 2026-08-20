@@ -1,5 +1,6 @@
 package com.tech.point_system.controller;
 
+import com.tech.point_system._enum.SubscriptionPlan;
 import com.tech.point_system.dto.subscription.SubscriptionDetailDTO;
 import com.tech.point_system.dto.subscription.SubscriptionRequestDTO;
 import com.tech.point_system.dto.subscription.SubscriptionResponseDTO;
@@ -27,6 +28,22 @@ public class SubscriptionController {
             @Valid @RequestBody SubscriptionRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(subscriptionService.subscribeCompanyAdmin(jwt.getSubject(), dto));
+    }
+
+    @PreAuthorize("hasRole('COMPANY_ADMIN')")
+    @PatchMapping("/change-plan")
+    public ResponseEntity<SubscriptionDetailDTO> changeSubscriptionPlan(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam SubscriptionPlan newPlan) {
+        return ResponseEntity.ok(subscriptionService.changeSubscriptionPlan(jwt.getSubject(), newPlan));
+    }
+
+    @PreAuthorize("hasRole('COMPANY_ADMIN')")
+    @PatchMapping("/upgrade")
+    public ResponseEntity<SubscriptionDetailDTO> upgradeSubscription(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam SubscriptionPlan newPlan) {
+        return ResponseEntity.ok(subscriptionService.changeSubscriptionPlan(jwt.getSubject(), newPlan));
     }
 
     @PreAuthorize("hasRole('COMPANY_ADMIN')")

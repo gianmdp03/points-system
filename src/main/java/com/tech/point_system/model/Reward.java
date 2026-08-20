@@ -4,7 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "rewards")
+@Table(
+        name = "rewards",
+        indexes = {
+                @Index(name = "idx_reward_company_enabled", columnList = "company_id, isEnabled")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor

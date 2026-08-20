@@ -29,10 +29,10 @@ public class Client {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(length = 150)
     private String email;
 
-    @Column(nullable = false)
+    @Column(length = 50)
     private String phone;
 
     @Column(nullable = false, updatable = false)

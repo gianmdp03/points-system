@@ -8,10 +8,15 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "products")
 @Getter
 @Setter
 @NoArgsConstructor
+@Table(
+        name = "products",
+        indexes = {
+                @Index(name = "idx_product_company_id", columnList = "company_id")
+        }
+)
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

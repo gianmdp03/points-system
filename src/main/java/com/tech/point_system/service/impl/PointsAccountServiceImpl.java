@@ -1,8 +1,6 @@
 package com.tech.point_system.service.impl;
 
 import com.tech.point_system._enum.TransactionType;
-import com.tech.point_system.dto.client.ClientDetailDTO;
-import com.tech.point_system.dto.company.CompanyListDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountDetailDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountRequestDTO;
 import com.tech.point_system.dto.pointsTransaction.PointsTransactionDetailDTO;
@@ -15,11 +13,8 @@ import com.tech.point_system.mapper.PointsAccountMapper;
 import com.tech.point_system.mapper.PointsTransactionMapper;
 import com.tech.point_system.model.*;
 import com.tech.point_system.repository.*;
-import com.tech.point_system._enum.Role;
-import com.tech.point_system.dto.user.UserDetailDTO;
 import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.PlanValidatorService;
-import com.tech.point_system.service.SupabaseAdminClient;
 import com.tech.point_system.service.PointsAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,23 +25,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
-@Transactional(readOnly = true)
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PointsAccountServiceImpl implements PointsAccountService {
-  private final PointsAccountMapper mapper;
-  private final ClientRepository clientRepository;
-  private final PromotionRepository promotionRepository;
   private final PointsAccountRepository pointsAccountRepository;
+  private final CompanyRepository companyRepository;
+  private final ClientRepository clientRepository;
+  private final PointsAccountMapper pointsAccountMapper;
   private final PointsTransactionRepository transactionRepository;
-  private final CompanyAccessValidator companyAccessValidator;
   private final PointsTransactionMapper transactionMapper;
+  private final CompanyAccessValidator companyAccessValidator;
   private final PlanValidatorService planValidatorService;
+  private final PromotionRepository promotionRepository;
 
   @Override
   @Transactional
@@ -56,98 +53,120 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     long currentClients = pointsAccountRepository.countByCompanyId(company.getId());
     planValidatorService.validateClientCreation(companyAdminId, (int) currentClients);
 
-    Client client = clientRepository.getOrCreateClient(dto.dni(), dto.country(), dto.name(), dto.email(), dto.phone());
+    Client client = clientRepository.getOrCreateClient(
+            dto.dni(), dto.country(), dto.name(), dto.email(), dto.phone());
 
-    if (pointsAccountRepository.findByClientIdAndCompanyId(client.getId(), company.getId()).isPresent()) {
-      throw new ConflictException("El cliente ya tiene una cuenta de puntos registrada en esta empresa.");
-    }
+    pointsAccountRepository.findByClientIdAndCompanyId(client.getId(), company.getId())
+            .ifPresent(existingAccount -> {
+              throw new ConflictException("El cliente ya se encuentra registrado y asociado a este comercio.");
+            });
 
-    PointsAccount account = new PointsAccount();
-    account.setClient(client);
-    account.setCompany(company);
-    account.setBalance(0);
-    account = pointsAccountRepository.save(account);
+    PointsAccount newAccount = new PointsAccount();
+    newAccount.setClient(client);
+    newAccount.setCompany(company);
+    newAccount.setBalance(0);
+    OffsetDateTime nowUtc = OffsetDateTime.now(ZoneOffset.UTC);
+    newAccount.setLastActivityDate(nowUtc);
 
-    CompanyListDTO companyDTO = new CompanyListDTO(company.getId(), company.getName(), company.getCompanyDetails(), company.getAmountStep(), company.getPointsPerStep(), company.getIsEnabled(), company.getAppAdminOwner());
-    ClientDetailDTO clientDTO = new ClientDetailDTO(client.getId(), client.getDni(), client.getCountry(), client.getName(), client.getEmail(), client.getPhone());
-
-    return new PointsAccountDetailDTO(account.getId(), account.getBalance(), companyDTO, clientDTO);
+    PointsAccount savedAccount = pointsAccountRepository.save(newAccount);
+    return pointsAccountMapper.toDetailDTO(savedAccount);
   }
 
-
   @Override
-  public Page<PointsAccountDetailDTO> listPointsAccounts(
-      String companyAdminId, Long companyId, Pageable pageable) {
-    companyAccessValidator.validateAccess(companyId, companyAdminId);
-    Page<PointsAccount> pointsAccounts =
-        pointsAccountRepository.findByCompanyId(companyId, pageable);
+  public Page<PointsAccountDetailDTO> listPointsAccounts(String companyAdminId, Long companyId, Pageable pageable) {
+    companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+    Page<PointsAccount> pointsAccounts = pointsAccountRepository.findByCompanyId(companyId, pageable);
     if (pointsAccounts.isEmpty()) {
       return Page.empty();
     }
-    return pointsAccounts.map(mapper::toDetailDTO);
+    return pointsAccounts.map(pointsAccountMapper::toDetailDTO);
   }
 
   @Override
-  @Transactional
   public Page<PointsTransactionDetailDTO> getTransactionHistory(Long clientId, Long companyId, Pageable pageable) {
-    PointsAccount pointsAccount = pointsAccountRepository.findByClientIdAndCompanyId(clientId, companyId).orElseThrow(()-> new NotFoundException("PointsAccount not found"));
-    Page<PointsTransaction> pointsTransactionList = transactionRepository.findByPointsAccount(pointsAccount, pageable);
-    if(pointsTransactionList.isEmpty()) {
+    PointsAccount pointsAccount = pointsAccountRepository.findByClientIdAndCompanyId(clientId, companyId)
+            .orElseThrow(() -> new NotFoundException("Points account not found for client " + clientId + " in company " + companyId));
+    Page<PointsTransaction> transactions = transactionRepository.findByPointsAccount(pointsAccount, pageable);
+    if (transactions.isEmpty()) {
       return Page.empty();
     }
-    return pointsTransactionList.map(transactionMapper::toDetailDTO);
+    return transactions.map(transactionMapper::toDetailDTO);
   }
 
-  //EVENTS
   @EventListener
   @Transactional
   public void handleSaleCreated(SaleCreatedEvent event) {
-    log.info("Procesando evento de venta para calcular puntos. Usuario: {}, Empresa: {}",
-            event.client().getId(), event.company().getId());
-
-    PointsAccount pointsAccount =
-            pointsAccountRepository
-                    .findByClientIdAndCompanyId(event.client().getId(), event.company().getId())
-                    .orElseThrow(() -> new NotFoundException("Points Account not found"));
+    PointsAccount pointsAccount = pointsAccountRepository
+            .findByClientIdAndCompanyId(event.client().getId(), event.company().getId())
+            .orElseGet(() -> {
+              PointsAccount newAccount = new PointsAccount();
+              newAccount.setClient(event.client());
+              newAccount.setCompany(event.company());
+              newAccount.setBalance(0);
+              newAccount.setLastActivityDate(OffsetDateTime.now(ZoneOffset.UTC));
+              return pointsAccountRepository.save(newAccount);
+            });
 
     BigDecimal amount = event.amount();
-    BigDecimal step = event.company().getAmountStep();
+    BigDecimal amountStep = event.company().getAmountStep();
     Integer pointsPerStep = event.company().getPointsPerStep();
 
-    int basePoints = amount.divideToIntegralValue(step).intValue() * pointsPerStep;
+    if (amountStep == null || amountStep.compareTo(BigDecimal.ZERO) <= 0) {
+      amountStep = new BigDecimal("100");
+    }
+    if (pointsPerStep == null || pointsPerStep <= 0) {
+      pointsPerStep = 1;
+    }
 
-    OffsetDateTime nowUtc = OffsetDateTime.now(ZoneOffset.UTC);
+    int steps = amount.divideToIntegralValue(amountStep).intValue();
+    int basePoints = steps * pointsPerStep;
 
-    BigDecimal multiplier = promotionRepository
-            .findActivePromotion(event.company().getId(), nowUtc)
-            .map(Promotion::getMultiplier)
-            .orElse(BigDecimal.ONE);
+    if (basePoints <= 0) {
+      return;
+    }
+
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    Promotion activePromo = promotionRepository.findActivePromotion(event.company().getId(), now).orElse(null);
+    BigDecimal multiplier = (activePromo != null && activePromo.getMultiplier() != null)
+            ? activePromo.getMultiplier()
+            : BigDecimal.ONE;
 
     int pointsToEarn = BigDecimal.valueOf(basePoints)
             .multiply(multiplier)
-            .setScale(0, RoundingMode.HALF_UP)
+            .setScale(0, BigDecimal.ROUND_HALF_UP)
             .intValue();
 
+    if (pointsToEarn <= 0) {
+      return;
+    }
+
     pointsAccount.setBalance(pointsAccount.getBalance() + pointsToEarn);
+    pointsAccount.setLastActivityDate(now);
     pointsAccount = pointsAccountRepository.save(pointsAccount);
 
     PointsTransaction transaction = new PointsTransaction();
     transaction.setPointsAccount(pointsAccount);
     transaction.setAmount(pointsToEarn);
+    transaction.setAvailableAmount(pointsToEarn);
     transaction.setTransactionType(TransactionType.EARNED);
-    transaction.setCreatedAt(nowUtc);
+    transaction.setCreatedAt(now);
+
+    if (Boolean.TRUE.equals(event.company().getIsPointsExpirationEnabled()) && event.company().getPointsExpirationDays() != null) {
+      transaction.setExpiresAt(now.plusDays(event.company().getPointsExpirationDays()));
+    } else {
+      transaction.setExpiresAt(null);
+    }
 
     transactionRepository.save(transaction);
 
-    log.info("Venta procesada con éxito. Se acreditaron {} puntos (Base: {}, Multiplicador: {}). Nuevo balance: {}",
-            pointsToEarn, basePoints, multiplier, pointsAccount.getBalance());
+    log.info("Venta procesada con éxito. Se acreditaron {} puntos (Base: {}, Multiplicador: {}). Vencimiento: {}. Nuevo balance: {}",
+            pointsToEarn, basePoints, multiplier, transaction.getExpiresAt(), pointsAccount.getBalance());
   }
 
   @EventListener
   @Transactional
   public void deductPoints(RewardRedeemEvent event) {
-    PointsAccount account =
-        pointsAccountRepository
+    PointsAccount account = pointsAccountRepository
             .findByClientIdAndCompanyId(event.client().getId(), event.company().getId())
             .orElseThrow(() -> new NotFoundException("Points account not found"));
 
@@ -155,18 +174,54 @@ public class PointsAccountServiceImpl implements PointsAccountService {
       throw new BadRequestException("Insufficient balance in the points account");
     }
 
+    // Logica FIFO en Batch: Buscar transacciones EARNED con availableAmount > 0 ordenadas por createdAt ASC
+    int costRemaining = event.costInPoints();
+    List<PointsTransaction> earnedTransactions = transactionRepository
+            .findByPointsAccountIdAndTransactionTypeAndAvailableAmountGreaterThanOrderByCreatedAtAsc(
+                    account.getId(), TransactionType.EARNED, 0);
+
+    List<PointsTransaction> updatedEarnedTxs = new ArrayList<>();
+
+    for (PointsTransaction earnedTx : earnedTransactions) {
+        if (costRemaining <= 0) {
+            break;
+        }
+        int available = earnedTx.getAvailableAmount() != null ? earnedTx.getAvailableAmount() : 0;
+        if (available <= 0) {
+            continue;
+        }
+
+        if (available >= costRemaining) {
+            earnedTx.setAvailableAmount(available - costRemaining);
+            costRemaining = 0;
+        } else {
+            costRemaining -= available;
+            earnedTx.setAvailableAmount(0);
+        }
+        updatedEarnedTxs.add(earnedTx);
+    }
+
+    // Guardado por lote de transacciones modificadas
+    if (!updatedEarnedTxs.isEmpty()) {
+        transactionRepository.saveAll(updatedEarnedTxs);
+    }
+
     account.setBalance(account.getBalance() - event.costInPoints());
-
-    account = pointsAccountRepository.save(account);
-
     OffsetDateTime nowUtc = OffsetDateTime.now(ZoneOffset.UTC);
+    account.setLastActivityDate(nowUtc);
+    account = pointsAccountRepository.save(account);
 
     PointsTransaction transaction = new PointsTransaction();
     transaction.setPointsAccount(account);
-    transaction.setAmount((event.costInPoints())*(-1));
+    transaction.setAmount(-event.costInPoints());
+    transaction.setAvailableAmount(0);
     transaction.setTransactionType(TransactionType.REDEEMED);
     transaction.setCreatedAt(nowUtc);
+    transaction.setExpiresAt(null);
 
     transactionRepository.save(transaction);
+
+    log.info("Canje procesado con éxito (FIFO Batch). Se descontaron {} puntos. Nuevo balance: {}",
+            event.costInPoints(), account.getBalance());
   }
 }

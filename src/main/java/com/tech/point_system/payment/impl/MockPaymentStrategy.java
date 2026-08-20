@@ -31,7 +31,7 @@ public class MockPaymentStrategy implements PaymentStrategy {
 
     @Override
     public SubscriptionResponseDTO createSubscription(User user, SubscriptionRequestDTO dto) {
-        log.info("[MOCK PAYMENT] Creando suscripción simulada para el usuario: {}", user.getEmail());
+        log.info("[MOCK PAYMENT] Creando suscripcion simulada para el usuario: {}", user.getEmail());
 
         String externalId = "MOCK-SUB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String checkoutUrl = "https://checkout.mock.local/pay/" + externalId;
@@ -41,7 +41,7 @@ public class MockPaymentStrategy implements PaymentStrategy {
         return new SubscriptionResponseDTO(
                 null,
                 dto.plan(),
-                SubscriptionStatus.ACTIVE, // Simula aprobación inmediata en MVP
+                SubscriptionStatus.ACTIVE,
                 getProvider(),
                 price,
                 currency,
@@ -51,8 +51,36 @@ public class MockPaymentStrategy implements PaymentStrategy {
     }
 
     @Override
+    public SubscriptionResponseDTO changeSubscriptionPlan(Subscription currentSubscription, SubscriptionPlan newPlan) {
+        log.info("[MOCK PAYMENT] Procesando cambio de plan de suscripcion {} de {} a {}",
+                currentSubscription.getExternalSubscriptionId(), currentSubscription.getPlan(), newPlan);
+
+        BigDecimal price = getMockPrice(newPlan);
+        String currency = currentSubscription.getCurrency() != null ? currentSubscription.getCurrency() : "ARS";
+        String externalId = currentSubscription.getExternalSubscriptionId() != null
+                ? currentSubscription.getExternalSubscriptionId()
+                : "MOCK-SUB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        return new SubscriptionResponseDTO(
+                currentSubscription.getId(),
+                newPlan,
+                SubscriptionStatus.ACTIVE,
+                getProvider(),
+                price,
+                currency,
+                null,
+                externalId
+        );
+    }
+
+    @Override
+    public SubscriptionResponseDTO upgradeSubscription(Subscription currentSubscription, SubscriptionPlan newPlan) {
+        return changeSubscriptionPlan(currentSubscription, newPlan);
+    }
+
+    @Override
     public void cancelSubscription(String externalSubscriptionId) {
-        log.info("[MOCK PAYMENT] Cancelando suscripción MOCK externa: {}", externalSubscriptionId);
+        log.info("[MOCK PAYMENT] Cancelando suscripcion MOCK externa: {}", externalSubscriptionId);
     }
 
     @Override
@@ -68,16 +96,18 @@ public class MockPaymentStrategy implements PaymentStrategy {
         }
 
         Subscription subscription = subscriptionRepository.findByExternalSubscriptionId(externalId)
-                .orElseThrow(() -> new NotFoundException("Suscripción no encontrada con id externo: " + externalId));
+                .orElseThrow(() -> new NotFoundException("Suscripcion no encontrada con id externo: " + externalId));
 
         subscription.setStatus(SubscriptionStatus.valueOf(statusStr.toUpperCase()));
         subscriptionRepository.save(subscription);
 
-        log.info("[MOCK PAYMENT] Estado de suscripción {} actualizado a {} vía Webhook", externalId, statusStr);
+        log.info("[MOCK PAYMENT] Estado de suscripcion {} actualizado a {} via Webhook", externalId, statusStr);
     }
 
     private BigDecimal getMockPrice(SubscriptionPlan plan) {
+        if (plan == null) return BigDecimal.ZERO;
         return switch (plan) {
+            case NONE, FREE_TRIAL -> BigDecimal.ZERO;
             case BASIC -> new BigDecimal("9900.00");
             case PRO -> new BigDecimal("19900.00");
             case ENTERPRISE -> new BigDecimal("39900.00");
