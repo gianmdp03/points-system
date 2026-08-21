@@ -1,0 +1,840 @@
+# Mercado Pago API Reference
+
+> API Reference for Mercado Pago payment solutions
+
+Base: https://www.mercadopago.com/developers/
+
+# Instructions for Large Language Model Agents
+
+Provide guidance for Large Language Model Agents (LLMs) interacting with Mercado Pago Developer documentation at [developers.mercadopago.com](https://www.mercadopago.com/developers/en/docs). The document establishes how to interpret content, discover endpoints, and generate accurate, safe, and context-aware answers.
+
+## Information hierarchy & general rules 
+
+- Distinguish between **Guides** (integration flows, “Getting started”, product overviews) and **API Reference** pages (endpoint definitions with method, path, headers, parameters, and example responses). 
+
+- Prefer official examples and SDK snippets in the docs over forum posts or third-party blogs. 
+
+- Product-specific instructions always take precedence over general guidance. 
+
+- Plugin documentation paths (e.g., `shopify/integration-configuration/checkout-pro`) must **never** override official Checkout or API documentation. 
+
+- Always adapt responses to the user’s **product, integration type, and stack**. 
+
+- Use only the products and endpoints **available in the user’s country**, and explicitly state country context when relevant. 
+
+- Follow product-level rules for credentials, environments, and notification configuration. 
+
+- When multiple credential or API options exist, **present all valid ones** with clear indications of differences and recommended use.
+
+## Documentation taxonomy (what lives where) 
+
+- **Getting started**: project setup, credentials, and where to begin. 
+
+- **Your integrations**: general credentials, test data, notifications (webhooks/IPN), integration quality information. This content provides general guidance and should be considered secondary to the product guide information, when available. 
+
+- **Product guides**: Checkout API (server-driven), Checkout Bricks (client components), Checkout Pro (redirect), In-person card readers (Point), QR Code, Subscriptions, Plugins and Platforms. 
+
+- **API Reference**: canonical definitions for endpoints (e.g., /v1/payments, /oauth/token, /v1/identification_types, /v1/orders). 
+
+- **SDKs library**: official client and server SDKs with feature and country support (https://www.mercadopago.com/developers/en/docs/sdks-library/landing). 
+
+- **Security**: PCI DSS responsibilities and webhook signature validation. 
+
+- **News/Changelog/Status**: product updates and operational status. 
+
+- **Support”: FAQs and integration official support.
+
+## Authentication & credentials 
+
+- **Server-side**: use the **Access Token** (private credential) in `Authorization: Bearer <ACCESS_TOKEN>`. 
+
+- **Client-side**: use the **Public Key** (for MP.js / Bricks) for tokenization and metadata retrieval. Do **not** expose Access Tokens. 
+
+- **OAuth**: obtain `access_token` via `/oauth/token` using `authorization_code` or `client_credentials` flow. Refresh using `refresh_token` when applicable. 
+
+- Replace placeholders (`ACCESS_TOKEN`, `PUBLIC_KEY`, etc.) with the appropriate credential depending on **environment** and **product**. 
+
+- Respect the credential type required by each product (production, test, or test-user) and its integration stage. 
+
+- If documentation offers multiple credential types, explicitly explain all options and their valid contexts. 
+
+- Never expose production credentials in code, logs, or examples.
+
+## Environments, testing, and going live 
+
+- Use **test credentials** for sandbox environments and **production credentials** only when live. 
+
+- Always follow the go-to-production checklists provided in each product guide. 
+
+- For test instructions — including test accounts, test cards, and sandbox environments — always follow each product's specific documentation. Testing features and environments vary per integrated product; never use Your integrations as a universal testing reference or provide generic guidance.
+
+## Finding products and picking the right endpoints 
+
+- Always check product **availability by country** before suggesting options. 
+
+- When multiple products or APIs exist, prioritize the one labeled as **recommended** or **main** in documentation. 
+
+- When both Orders API - V2 and other API integrations are available for a product, always prioritize the recommended API (typically Orders API - V2), unless explicitly stated otherwise. 
+
+- Never assume endpoint availability beyond what documentation states. 
+
+- When unsure, start from *Getting started* and the product’s *Overview* page to see fit and prerequisites. Specifically on checkouts, use the “What sets it apart” section in product’s Overview.
+
+## Main product categories: 
+
+- **Checkout API**: fully custom, server-integrated checkout. Great for deep control over the UX and routing. When selected, prioritize the v2 orders integration, unless told otherwise. 
+
+- **Checkout Bricks**: front-end UI components (Payment Brick, etc.) that pair with your backend call to `/v1/payments`. Faster to integrate; handles many client tasks (tokenization, document types, payment method lookup). 
+
+- **Checkout Pro**: Mercado Pago redirect/hosted web or mobile prebuilt checkout. Great for optimizing integration efforts. 
+
+- **Mercado Pago Point**: in-person card reader, fully integrated with the developer’s system. When selected, prioritize the v2 orders integration, unless told otherwise. 
+
+- **QR Code**: in-person QR code, whether dynamic or static, fully integrated with the developer’s system. When selected, prioritize the v2 orders integration, unless told otherwise. 
+
+- **Subscriptions**: recurring payments features and references.
+
+## Notifications 
+
+- For new integrations, always **prefer Webhooks** over IPN. 
+
+- Use IPN only if explicitly required for legacy or product-specific configurations. 
+
+- Validate incoming Webhooks using the `x-signature` header. 
+
+- Use the **Webhooks Simulator**, when available, during development to test delivery and payloads.
+
+## API reference interpretation 
+
+- Confirm HTTP **method** and **path**; never invent or infer endpoints. 
+
+- Always include required headers (`Authorization`, `X-Idempotency-Key` when applicable). 
+
+- Respect required vs optional fields and data types exactly as listed. 
+
+- Use official examples as templates only. 
+
+- Reference the API spec for field names and response structures.
+
+## Code examples and SDK usage 
+
+- Treat documentation snippets as **templates**, replacing placeholders with test data. 
+
+- Match SDKs or language examples to the user’s stack. 
+
+- Show correct placement of headers and tokens per SDK. 
+
+- Avoid including real credentials or sensitive data.
+
+## Plugins and checkout documentation paths 
+
+- Some plugin paths (e.g., Shopify) include content about Checkout products. 
+
+- When overlap exists, **Checkout or API documentation takes precedence**. 
+
+- Plugin docs should be used only for context about specific platform setups, not as canonical integration references. 
+
+- Adapt responses based on user context: plugin vs. API integration.
+
+## Security 
+
+- Mercado Pago is **PCI DSS compliant**. Follow integration security requirements. 
+
+- Always validate the webhook `x-signature` header prior to processing. 
+
+- **OAuth scopes & token hygiene**: store tokens securely; refresh as documented; don’t leak tokens client-side.
+
+## Error handling & troubleshooting
+
+- Use documented error lists and response codes for guidance. 
+
+- For payment results, check status fields (`approved`, `rejected`, etc.) and next actions. 
+
+- If repeated failures occur, verify credentials, headers, and environment setup.
+
+## Localization and country context 
+
+- Documentation URLs follow the pattern `https://www.mercadopago.com/developers/{lang}/docs/{path}`, where `{lang}` is the language code (`en`, `es`, `pt`), `{country}` is the country code (e.g., `ar`, `br`, `mx`, `co`, `pe`, `uy`) and appears as a path segment (e.g., `.../ar/...`, `.../br/...`), and `{path}` varies by product and section. 
+
+- If a link fails, adjust both the language and country segments of the URL. 
+
+- **Not all content is available on every site.** When adjusting a link, limit suggestions to content available on the site the user is consulting from — do not reference or redirect to content only available in other countries. 
+
+- Payment methods, document types, and compliance vary per country. 
+
+- Explicitly state the country in all responses.
+
+## Response guidelines for LLMs 
+
+- Prefer **link-first** and **flow-first** answer patterns. 
+
+- Always cite the **most specific** documentation path used. 
+
+- When unsure or context is missing, suggest navigation paths (“Go to Developers → Your integrations → Credentials”). 
+
+- Respect the information hierarchy defined above. 
+
+- Although these instructions are written in English, always detect the user's preferred language and present both responses and links in that language.
+
+## Limitations & caveats
+
+- API rate limits may apply; follow retry and backoff practices. 
+
+- Product and country features may diverge; check each reference version. 
+
+- Use the **Status** and **Changelog** pages to verify ongoing changes.
+
+## When in doubt
+
+1. Confirm the user’s **country** and **product**. 
+
+2. Start from **Getting started → Your integrations → Product overview → API reference**. 
+
+3. Cross-check **Status**, **News**, or **Changelog** if behavior recently changed.
+
+4. Provide country-specific links whenever available.
+
+## OAuth
+
+Endpoint definitions, request parameters, response schemas, and authentication requirements for the Mercado Pago API.
+
+- [Overview](https://www.mercadopago.com.ar/developers/en/reference/authentication/oauth/overview): Overview
+- [Create and refresh token](https://www.mercadopago.com.ar/developers/en/reference/authentication/oauth/_oauth_token/post): Create and refresh token
+
+## Checkout Pro
+
+- [Overview](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/overview): Overview
+- Preferences API: Preferences API
+  - Preferences: 
+Preferences
+
+    - [Create preference](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/preferences/create-preference/post): Create preference
+    - [Search preferences](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/preferences/search-preferences/get): Search preferences
+    - [Get preference](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/preferences/get-preference/get): Get preference
+    - [Update preference](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/preferences/update-preference/put): Update preference
+  - Payments: Payments
+    - [Search payments](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/search-payments/get): Search payments
+    - [Get payment](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/get-payment/get): Get payment
+  - Merchant orders: Merchant orders
+    - [Search merchant orders](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/merchant_orders/search-merchant-order/get): Search merchant orders
+    - [Get merchant order](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/merchant_orders/get-merchant-order/get): Get merchant order
+    - [Update merchant order](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/merchant_orders/update-merchant-order/put): Update merchant order
+  - Payment methods: Payment methods
+    - [Get payment methods](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/payment_methods/get): Get payment methods
+    - [Obtain installment payment options](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/payment_methods/installments/get): Obtain installment payment options
+  - Cancellations: Cancellations
+    - [Create cancellation](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/create-cancellation/put): Create cancellation
+  - Refunds: Refunds
+    - [Create refund](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/create-refund/post): Create refund
+    - [Get specific refund](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/get-refund/get): Get specific refund
+    - [Get refunds list](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/get-refunds/get): Get refunds list
+  - Chargebacks: Chargebacks
+    - [Get chargeback](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-pro/chargebacks/get): Get chargeback
+
+## Checkout API
+
+- [Overview](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/overview): Overview
+- Orders API: Orders API
+  - Orders: Orders
+    - [Create order](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/create-order/post): Create order
+    - [Capture order fully](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/capture-order/post): Capture order fully
+    - [Update a transaction from the order](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/update-transaction-order/put): Update a transaction from the order
+    - [Add transactions to the order](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/add-transaction-order/post): Add transactions to the order
+    - [Process order by ID](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/process-order/post): Process order by ID
+    - [Delete a transaction from the order](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/delete-transaction-order/delete): Delete a transaction from the order
+    - [Search order](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/search-order/get): Search order.
+    - [Get order by ID](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/get-order/get): Get order by ID
+    - [Cancel order by ID](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/cancel-order/post): Cancel order by ID
+    - [Refund order](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/refund-order/post): Refund order
+  - Payment methods: Payment methods
+    - [Get payment methods](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/payment-methods/get): Get payment methods
+  - Document types: Document types
+    - [Get document types](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/identification-types/get): Get document types
+  - Cards: Cards
+    - [Save card](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/cards/save-card/post): Save card
+    - [Get customer cards](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/cards/get-customer-cards/get): Get customer cards
+    - [Get card](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/cards/get-card/get): Get card
+    - [Update card](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/cards/update-card/put): Update card
+    - [Delete card](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/cards/delete-card/delete): Delete card
+  - Customers: Customers
+    - [Create customer](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/customers/create-customer/post): Create customer
+    - [Search customers](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/customers/search-customer/get): Search customers
+    - [Get customer](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/customers/get-customer/get): Get customer
+    - [Update customer](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/customers/update-customer/put): Update customer
+  - Addresses: Addresses
+    - [Create address](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/addresses/create-address/post): Create address
+    - [List addresses](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/addresses/list-addresses/get): List addresses
+    - [Get address](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/addresses/get-address/get): Get address
+    - [Update address](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/addresses/update-address/put): Update address
+    - [Delete an address](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/addresses/delete-address/delete): Delete an address
+  - Chargebacks: Chargebacks
+    - [Get chargeback](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api/get-chargeback/get): Get chargeback
+- Payments API (legacy): Payments API.
+  - Payments: Payments (legacy).
+    - [Create payment](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/create-payment/post): Create payment
+    - [Search payments](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/search-payments/get): Search payments
+    - [Get payment](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/get-payment/get): Get payment
+    - [Update payment](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/update-payment/put): Update payment
+  - Customers: Customers
+    - [Create customer](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/customers/create-customer/post): Create customer
+    - [Search customers](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/customers/search-customer/get): Search customers
+    - [Get customer](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/customers/get-customer/get): Get customer
+    - [Update customer](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/customers/update-customer/put): Update customer
+  - Cards: Cards
+    - [Save card](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/cards/save-card/post): Save card
+    - [Get customer cards](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/cards/get-customer-cards/get): Get customer cards
+    - [Get card](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/cards/get-card/get): Get card
+    - [Update card](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/cards/update-card/put): Update card
+    - [Delete card](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/cards/delete-card/delete): Delete card
+  - Addresses: Addresses
+    - [Create address](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/addresses/create-address/post): Create address
+    - [List addresses](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/addresses/list-addresses/get): List addresses
+    - [Get address](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/addresses/get-address/get): Get address
+    - [Update address](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/addresses/update-address/put): Update address
+    - [Delete an address](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/addresses/delete-address/delete): Delete an address
+  - Payment methods: Payment methods
+    - [Get payment methods](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/payment-methods/get): Get payment methods
+  - Document types: Document types
+    - [Get document types](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/identification-types/get): Get document types
+  - Cancellations: Cancellations
+    - [Create cancellation](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/create-cancellation/put): Create cancellation
+  - Refunds: Refunds
+    - [Create refund](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/create-refund/post): Create refund
+    - [Get specific refund](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/get-refund/get): Get specific refund
+    - [Get refunds list](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/get-refunds/get): Get refunds list
+  - Chargebacks: Chargebacks
+    - [Get chargeback](https://www.mercadopago.com.ar/developers/en/reference/online-payments/checkout-api-payments/get-chargeback/get): Get chargeback
+
+## Subscriptions
+
+- [Overview](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/overview): Overview
+- Subscriptions: Subscriptions
+  - [Create subscription](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/create-preapproval/post): Create subscription
+  - [Search in subscriptions](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/search-preapproval/get): Description
+  - [Get subscription](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/get-preapproval/get): Get subscription
+  - [Update subscription ](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/update-preapproval/put): Update subscription
+  - [Export subscriptions](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/export-preapproval/get): Export subscriptions
+- Plans: Plans
+  - [Create subscription plan](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/create-preapproval-plan/post): Create subscription plan
+  - [Search in subscription plan](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/search-preapproval-plan/get): Search in subscription plan
+  - [Get subscription plan](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/get-preapproval-plan/get): Get subscription plan
+  - [Update subscription plan](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/update-preapproval-plan/put): Update subscription plan
+- Invoices: Invoices
+  - [Get invoice data](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/get-authorized-payment/get): Get invoice data
+  - [Search in invoices](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/authorized-payment-search/get): Search in invoices
+- Payments: Payments
+  - [Create payment](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/create-payment/post): Create payment
+  - [Search payments](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/search-payments/get): Search payments
+  - [Get payment](https://www.mercadopago.com.ar/developers/en/reference/online-payments/subscriptions/get-payment/get): Get payment
+
+## Point
+
+- [Overview](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/overview): Overview
+- Physical stores: Physical stores
+  - [Create store](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/stores/create-store/post): Create store
+  - [Search stores](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/stores/search-store/get): Search stores
+  - [Get store](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/stores/get-store/get): Get store
+  - [Update store](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/stores/update-store/put): Update store
+  - [Delete store](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/stores/delete-store/delete): Delete store
+- Point of sale: Point of sale
+  - [Create point of sale](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/pos/create-pos/post): Create point of sale
+  - [Search point of sale](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/pos/search-pos/get): Search point of sale
+  - [Get point of sale](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/pos/get-pos/get): Get point of sale
+  - [Update point of sale](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/pos/update-pos/put): Update point of sale
+  - [Delete point of sale](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/pos/delete-pos/delete): Delete point of sale
+- Terminals: description
+  - [Get list of terminals](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/terminals/get-terminals/get): Get list of terminals
+  - [Update terminal operation mode](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/terminals/update-operation-mode/patch): Update terminal operation mode
+- Orders API: Orders API
+  - [Create order](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/orders/create-order/post): Create order
+  - [Get order by ID](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/orders/get-order/get): Get order by ID.
+  - [Cancel order by ID](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/orders/cancel-order/post): Cancel order by ID.
+  - [Refund order](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/orders/refund-order/post): Refund order.
+  - [Simulate order status](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/orders/simulate-order/post): Simulate order state
+- Chargebacks: Chargebacks
+  - [Get chargeback](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/point/get-chargeback/get): Get chargeback
+- Deprecated: Deprecated
+  - Devices: Devices
+    - [Get devices](https://www.mercadopago.com.ar/developers/en/reference/integrations_api/_point_integration-api_devices/get): Get devices
+    - [Change operation mode](https://www.mercadopago.com.ar/developers/en/reference/integrations_api/_point_integration-api_devices_device-id/patch): Change operation mode
+  - Payment intent: Payment intent
+    - [Create payment intent](https://www.mercadopago.com.ar/developers/en/reference/integrations_api/_point_integration-api_devices_deviceid_payment-intents/post): Create payment intent
+    - [Cancel payment intent](https://www.mercadopago.com.ar/developers/en/reference/integrations_api/_point_integration-api_devices_deviceid_payment-intents_paymentintentid/delete): Cancel payment intent
+    - [Search payment intent](https://www.mercadopago.com.ar/developers/en/reference/integrations_api/_point_integration-api_payment-intents_paymentintentid/get): Search payment intent
+  - Integrators: Integrators
+    - [Update integrator configuration](https://www.mercadopago.com.ar/developers/en/reference/integrations_api/_point_integration-api_integrator/patch): Check the necessary information to update the integrator settings.
+    - [Get integrator configuration](https://www.mercadopago.com.ar/developers/en/reference/integrations_api/_point_integration-api_integrator/get): Learn how to get integrator notification information and settings
+
+## QR Code
+
+- [Overview](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/overview): Overview
+- Physical stores: Physical stores
+  - [Create store](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/stores/create-store/post): Create store
+  - [Get store](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/stores/get-store/get): Get store
+  - [Search stores](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/stores/search-store/get): Search stores
+  - [Update store](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/stores/update-store/put): Update store
+  - [Delete store](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/stores/delete-store/delete): Delete store
+- Point of sale: Point of sale
+  - [Create point of sale](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/pos/create-pos/post): Create point of sale
+  - [Get point of sale](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/pos/get-pos/get): Get point of sale
+  - [Search point of sale](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/pos/search-pos/get): Search point of sale
+  - [Update point of sale](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/pos/update-pos/put): Update point of sale
+  - [Delete point of sale](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/pos/delete-pos/delete): Delete point of sale
+- Orders API: Orders API
+  - [Create order](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/orders/create-order/post): Create order
+  - [Get order by ID](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/orders/get-order/get): Get order by ID
+  - [Refund order](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/orders/refund-order/post): Refund order
+  - [Cancel order by ID](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/orders/cancel-order/post): Cancel order by ID
+- Chargebacks: Chargebacks
+  - [Get chargeback](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/get-chargeback/get): Get chargeback
+- Deprecated: Deprecated
+  - Instore orders: Instore orders
+    - [Create order](https://www.mercadopago.com.ar/developers/en/reference/instore_orders/_mpmobile_instore_qr_user_id_external_id/post): Create order
+    - [Delete order](https://www.mercadopago.com.ar/developers/en/reference/instore_orders/_mpmobile_instore_qr_user_id_external_id/delete): Delete order
+  - Instore orders V2: Instore orders V2
+    - [Create order](https://www.mercadopago.com.ar/developers/en/reference/instore_orders/_instore_qr_seller_collectors_user_id_stores_external_store_id_pos_external_pos_id_orders/put): Create order
+    - [Get order](https://www.mercadopago.com.ar/developers/en/reference/instore_orders/_instore_qr_seller_collectors_user_id_pos_external_pos_id_orders/get): Get order
+    - [Delete order](https://www.mercadopago.com.ar/developers/en/reference/instore_orders/_instore_qr_seller_collectors_user_id_pos_external_pos_id_orders/delete): Delete order
+  - QR Dynamic Model: QR Dynamic Model
+    - [Create QR tramma](https://www.mercadopago.com.ar/developers/en/reference/qr-dynamic/_instore_orders_qr_seller_collectors_user_id_pos_external_pos_id_qrs/post): Create QR tramma
+    - [Create order](https://www.mercadopago.com.ar/developers/en/reference/qr-dynamic/_instore_orders_qr_seller_collectors_user_id_pos_external_pos_id_qrs/put): Create order
+  - Refunds: Refunds
+    - [Create refund](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/create-refund/post): Create refund
+    - [Get refunds list](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/search-refund/get): Get refunds list
+    - [Get specific refund](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/get-refund/get): Get specific refund
+  - Integrators: Integrators
+    - [Update integrator configuration](https://www.mercadopago.com.ar/developers/en/reference/integrations_api/_point_integration-api_integrator/patch): Check the necessary information to update the integrator settings.
+    - [Get integrator configuration](https://www.mercadopago.com.ar/developers/en/reference/integrations_api/_point_integration-api_integrator/get): Learn how to get integrator notification information and settings
+- Interoperable QR: Interoperable QR
+  - [Resolve QR](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/interoperable-qr/resolve-qr/get): Resolve QR
+  - [Query available plans](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/interoperable-qr/query-plans/patch): Query available plans
+  - [Get payment by payment ID](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/interoperable-qr/get-payment-by-id/get): Get payment by payment ID
+  - [Get payments by order ID](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/interoperable-qr/get-payments-by-order/get): Get payments by order ID
+  - [Process payment](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/interoperable-qr/process-payment/post): Process payment
+  - [Generate Acceptor Token](https://www.mercadopago.com.ar/developers/en/reference/in-person-payments/qr-code/interoperable-qr/generate-acceptor-token/post): Generate Acceptor Token
+
+## Claims
+
+- [Overview](https://www.mercadopago.com.ar/developers/en/reference/claims/overview): Overview
+- Claims: Claims
+  - [Get claim details](https://www.mercadopago.com.ar/developers/en/reference/claims/get-claim-details/get): Get claim details
+  - [Search claims](https://www.mercadopago.com.ar/developers/en/reference/claims/search-claims/get): Search claims
+  - [Get the reason for the claim](https://www.mercadopago.com.ar/developers/en/reference/claims/get-reason-for-claim/get): Get the reason for the claim
+  - [Get claim history](https://www.mercadopago.com.ar/developers/en/reference/claims/get-claim-history/get): Get claim history
+  - [Get claim evidence](https://www.mercadopago.com.ar/developers/en/reference/claims/get-claim-evidence/get): Get claim evidence
+  - [Get claim notifications](https://www.mercadopago.com.ar/developers/en/reference/claims/get-claim-notifications/get): Get claim notifications
+- Files and messages: Files and messages
+  - [Get claim messages](https://www.mercadopago.com.ar/developers/en/reference/claims/get-claim-messages/get): Get claim messages
+  - [Get file data](https://www.mercadopago.com.ar/developers/en/reference/claims/get-file-data/get): Get file data
+  - [Download attached files](https://www.mercadopago.com.ar/developers/en/reference/claims/download-attached-files/get): Download attached files
+  - [Attach files to the message](https://www.mercadopago.com.ar/developers/en/reference/claims/attach-files-to-message/post): Attach files to the message
+  - [Send message with file](https://www.mercadopago.com.ar/developers/en/reference/claims/send-message-with-file/post): Send message with file
+- Resolutions: Resolutions
+  - [Request claim mediation](https://www.mercadopago.com.ar/developers/en/reference/claims/request-mediation-claim/post): Request claim mediation
+  - [See expected resolutions at mediation](https://www.mercadopago.com.ar/developers/en/reference/claims/see-expected-resolutions-mediation/get): See expected resolutions at mediation
+- Delivery: Delivery
+  - [Upload shipping evidence](https://www.mercadopago.com.ar/developers/en/reference/claims/upload-shipping-evidence/post): Upload shipping evidence
+
+## Reports
+
+- [Overview](https://www.mercadopago.com.ar/developers/en/reference/reports/overview): Overview
+- Releases
+  - [Create new configuration](https://www.mercadopago.com.ar/developers/en/reference/releases-report/create-new-configuration/post)
+  - [Update configurations](https://www.mercadopago.com.ar/developers/en/reference/releases-report/update-configurations/put)
+  - [Consult configurations](https://www.mercadopago.com.ar/developers/en/reference/releases-report/consult-configurations/get)
+  - [Get report generation task](https://www.mercadopago.com.ar/developers/en/reference/releases-report/search-task/get): Get report generation task
+  - [Create report](https://www.mercadopago.com.ar/developers/en/reference/releases-report/create-report/post)
+  - [Consult report list](https://www.mercadopago.com.ar/developers/en/reference/releases-report/consult-report/get)
+  - [Search specific report](https://www.mercadopago.com.ar/developers/en/reference/releases-report/search-report/get): Search specific report
+  - [Enable automatic generation](https://www.mercadopago.com.ar/developers/en/reference/releases-report/enable-automatic-generation/post)
+  - [Disable automatic generation](https://www.mercadopago.com.ar/developers/en/reference/releases-report/disable-automatic-generation/delete)
+  - [Download report](https://www.mercadopago.com.ar/developers/en/reference/releases-report/download-report/get)
+- Account money
+  - [Create a new configuration](https://www.mercadopago.com.ar/developers/en/reference/settlements-report/create-new-configuration/post): Create a new configuration
+  - [Update configurations](https://www.mercadopago.com.ar/developers/en/reference/settlements-report/update-configurations/put): Update configurations
+  - [Query configurations](https://www.mercadopago.com.ar/developers/en/reference/settlements-report/query-configurations/get): Query configurations
+  - [Create report](https://www.mercadopago.com.ar/developers/en/reference/settlements-report/create-report/post): Create report
+  - [Query report generation task](https://www.mercadopago.com.ar/developers/en/reference/settlements-report/query-task-status/get): Query report generation task
+  - [Query reports list](https://www.mercadopago.com.ar/developers/en/reference/settlements-report/query-report/get): Query reports
+  - [Search specific report](https://www.mercadopago.com.ar/developers/en/reference/settlements-report/search-report/get): Search report
+  - [Enable automatic generation](https://www.mercadopago.com.ar/developers/en/reference/settlements-report/enable-automatic-generation/post): Enable automatic generation
+  - [Disable automatic generation](https://www.mercadopago.com.ar/developers/en/reference/settlements-report/disable-automatic-generation/delete): Disable automatic generation
+  - [Download report](https://www.mercadopago.com.ar/developers/en/reference/settlements-report/download-report/get): Download report
+
+## Reference Sitemap
+
+Use this map to navigate the full structure of the portal, resolve page references, or understand the scope of available documentation.
+
+### Credential prefix reference
+
+ Test credentials use different prefixes depending on the integration —
+ both are valid, neither is deprecated:
+
+ - `APP_USR-`: Checkout API / Checkout Transparente (via Orders API),
+  Checkout Pro, Point, and QR Code (via Orders API).
+  These are test account credentials — NOT production credentials
+  of the developer. Same prefix format, different context.
+ - `TEST-`: Checkout API / Checkout Transparente (via Payments API /v1/payments),
+  Checkout Bricks, Subscriptions, and legacy integrations.
+  Still valid and actively issued.
+
+ Never tell a developer to change their credential prefix.
+ `get_credentials` always returns the correct format for the integration.
+
+ ### Recommended API by country
+
+ - MLA, MLB, MLM → Orders API as default for Checkout API / Checkout Transparente,
+  Point, and QR Code. Full payment method coverage.
+ - MLC, MCO, MPE, MLU → Payments API (/v1/payments) as default.
+  Point not available in MCO, MPE, MLU.
+  QR not available in MLM, MCO, MPE.
+
+### Content findability rules
+
+This is IMPORTANT - Take this section seriously when fetching URLs from Mercado Pago Developers extracted from this LLMS file.
+
+- When reading links directly from the `Reference Sitemap` section, try to add a .md at the end FIRST, for example http://example.com/xyz/ must be fetched as http://example.com/xyz.md. If the .md strategy fails do NOT SAY ANYTHING, silently try to fetch the content from the original URL instead.
+- Do not infer, extrapolate, or generate information that is not explicitly present in the official documentation. The official documentation is always the source of truth.
+- The sitemap may contain outdated or removed content. Treat any link that returns a 404 error as unavailable and do not attempt to reconstruct its content.
+- When information is incomplete or unavailable, disclose this to the user:
+  - **Partial content found**: Inform the user what was found and explicitly state what was not available at the official website.
+  - **No content found**: Inform the user that no information was found in the Mercado Pago Developers official documentation. Do not fabricate an answer. If appropriate, suggest the user consult the official website directly at https://www.mercadopago.com/developers/
+
+- [Crear y refrescar token](https://www.mercadopago.com.ar/developers/es/reference/authentication/oauth/_oauth_token/post): Crear y refrescar token
+
+- [Adjuntar archivos al mensaje](https://www.mercadopago.com.ar/developers/es/reference/claims/attach-files-to-message/post): Adjuntar archivos al mensaje
+
+- [Descargar archivos adjuntos](https://www.mercadopago.com.ar/developers/es/reference/claims/download-attached-files/get): Descargar archivos adjuntos
+
+- [Obtener detalles del reclamo](https://www.mercadopago.com.ar/developers/es/reference/claims/get-claim-details/get): Obtener detalles del reclamo
+
+- [Obtener evidencias del reclamo](https://www.mercadopago.com.ar/developers/es/reference/claims/get-claim-evidence/get): Obtener evidencias del reclamo
+
+- [Obtener historial del reclamo](https://www.mercadopago.com.ar/developers/es/reference/claims/get-claim-history/get): Obtener historial del reclamo
+
+- [Obtener mensajes del reclamo](https://www.mercadopago.com.ar/developers/es/reference/claims/get-claim-messages/get): Obtener mensajes del reclamo
+
+- [Obtener notificaciones del reclamo](https://www.mercadopago.com.ar/developers/es/reference/claims/get-claim-notifications/get): Obtener notificaciones del reclamo
+
+- [Obtener información del archivo](https://www.mercadopago.com.ar/developers/es/reference/claims/get-file-data/get): Obtener información del archivo
+
+- [Obtener motivo del reclamo](https://www.mercadopago.com.ar/developers/es/reference/claims/get-reason-for-claim/get): Obtener motivo del reclamo
+
+- [Solicitar mediación del reclamo](https://www.mercadopago.com.ar/developers/es/reference/claims/request-mediation-claim/post): Solicitar mediación del reclamo
+
+- [Buscar reclamos](https://www.mercadopago.com.ar/developers/es/reference/claims/search-claims/get): Buscar reclamos
+
+- [Ver resoluciones esperadas en mediación](https://www.mercadopago.com.ar/developers/es/reference/claims/see-expected-resolutions-mediation/get): Ver resoluciones esperadas en mediación
+
+- [Enviar mensaje con archivo](https://www.mercadopago.com.ar/developers/es/reference/claims/send-message-with-file/post): Enviar mensaje con archivo
+
+- [Cargar evidencias de envío](https://www.mercadopago.com.ar/developers/es/reference/claims/upload-shipping-evidence/post): Cargar evidencias de envío
+
+- [Obtener contracargo](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/get-chargeback/get): Obtener contracargo
+
+- [Cancelar order por ID](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/orders/cancel-order/post): Cancelar order por ID.
+
+- [Crear order](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/orders/create-order/post): Crear order
+
+- [Obtener order por ID](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/orders/get-order/get): Obtener order por ID.
+
+- [Reembolsar una order](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/orders/refund-order/post): Reembolsar una order.
+
+- [Simular estado de la order](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/orders/simulate-order/post): Simular estado de la order
+
+- [Crear caja](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/pos/create-pos/post): Crear caja
+
+- [Eliminar caja](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/pos/delete-pos/delete): Eliminar caja
+
+- [Obtener caja](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/pos/get-pos/get): Obtener caja
+
+- [Buscar en cajas](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/pos/search-pos/get): Buscar en cajas
+
+- [Actualizar caja](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/pos/update-pos/put): Actualizar caja
+
+- [Crear sucursal](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/stores/create-store/post): Crear sucursal
+
+- [Eliminar sucursal](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/stores/delete-store/delete): Eliminar sucursal
+
+- [Obtener sucursal](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/stores/get-store/get): Obtener sucursal
+
+- [Buscar en sucursales](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/stores/search-store/get): Buscar en sucursales
+
+- [Actualizar sucursal](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/stores/update-store/put): Actualizar sucursal
+
+- [Obtener lista de terminals](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/terminals/get-terminals/get): Obtener lista de terminals.
+
+- [Actualizar modo de operación de la terminal](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/point/terminals/update-operation-mode/patch): Actualizar modo de operación de la terminal.
+
+- [Crear reembolso](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/create-refund/post): Crear reembolso 
+
+- [Obtener contracargo](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/get-chargeback/get): Obtener contracargo
+
+- [Obtener reembolso específico](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/get-refund/get): Obtener reembolso específico
+
+- [Generar Acceptor Token](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/interoperable-qr/generate-acceptor-token/post): Generar Acceptor Token
+
+- [Consultar pago por payment ID](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/interoperable-qr/get-payment-by-id/get): Consultar pago por payment ID
+
+- [Consultar pagos por order ID](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/interoperable-qr/get-payments-by-order/get): Consultar pagos por order ID
+
+- [Procesar el pago](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/interoperable-qr/process-payment/post): Procesar el pago
+
+- [Consultar planes disponibles](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/interoperable-qr/query-plans/patch): Consultar planes disponibles
+
+- [Resolver QR](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/interoperable-qr/resolve-qr/get): Resolver QR
+
+- [Cancelar order por ID](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/orders/cancel-order/post): Cancelar order por ID
+
+- [Crear order](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/orders/create-order/post): Crear order
+
+- [Obtener order por ID](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/orders/get-order/get): Obtener order por ID
+
+- [Reembolsar una order](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/orders/refund-order/post): Reembolsar una order
+
+- [Crear caja](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/pos/create-pos/post): Crear caja
+
+- [Eliminar caja](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/pos/delete-pos/delete): Eliminar caja
+
+- [Obtener caja](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/pos/get-pos/get): Obtener caja
+
+- [Buscar en cajas](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/pos/search-pos/get): Buscar en cajas
+
+- [Actualizar caja](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/pos/update-pos/put): Actualizar caja
+
+- [Obtener lista de reembolsos](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/search-refund/get): Obtener lista de reembolsos
+
+- [Crear sucursal](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/stores/create-store/post): Crear sucursal
+
+- [Eliminar sucursal](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/stores/delete-store/delete): Eliminar sucursal
+
+- [Obtener sucursal](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/stores/get-store/get): Obtener sucursal
+
+- [Buscar en sucursales](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/stores/search-store/get): Buscar en sucursales
+
+- [Actualizar sucursal](https://www.mercadopago.com.ar/developers/es/reference/in-person-payments/qr-code/stores/update-store/put): Actualizar sucursal
+
+### reference / instore_orders / _instore_qr_seller_collectors_user_id_pos_external_pos_id_orders
+
+- [Eliminar orden](https://www.mercadopago.com.ar/developers/es/reference/instore_orders/_instore_qr_seller_collectors_user_id_pos_external_pos_id_orders/delete): Eliminar orden
+- [Obtener orden](https://www.mercadopago.com.ar/developers/es/reference/instore_orders/_instore_qr_seller_collectors_user_id_pos_external_pos_id_orders/get): Obtener orden
+
+- [Crear orden](https://www.mercadopago.com.ar/developers/es/reference/instore_orders/_instore_qr_seller_collectors_user_id_stores_external_store_id_pos_external_pos_id_orders/put): Crear orden
+
+### reference / instore_orders / _mpmobile_instore_qr_user_id_external_id
+
+- [Eliminar orden](https://www.mercadopago.com.ar/developers/es/reference/instore_orders/_mpmobile_instore_qr_user_id_external_id/delete): Eliminar orden
+- [Crear orden](https://www.mercadopago.com.ar/developers/es/reference/instore_orders/_mpmobile_instore_qr_user_id_external_id/post): Crear orden
+
+- [Obtener dispositivos](https://www.mercadopago.com.ar/developers/es/reference/integrations_api/_point_integration-api_devices/get): Obtener dispositivos
+
+- [Cambiar modo de operación](https://www.mercadopago.com.ar/developers/es/reference/integrations_api/_point_integration-api_devices_device-id/patch): Cambiar modo de operación
+
+- [Crear intención de pago](https://www.mercadopago.com.ar/developers/es/reference/integrations_api/_point_integration-api_devices_deviceid_payment-intents/post): Crear intención de pago
+
+- [Cancelar intención de pago](https://www.mercadopago.com.ar/developers/es/reference/integrations_api/_point_integration-api_devices_deviceid_payment-intents_paymentintentid/delete): Cancelar intención de pago
+
+### reference / integrations_api / _point_integration-api_integrator
+
+- [Obtener configuración del integrador](https://www.mercadopago.com.ar/developers/es/reference/integrations_api/_point_integration-api_integrator/get): Aprenda a obtener información y configuración de notificaciones del integrador
+- [Actualizar configuración del integrador](https://www.mercadopago.com.ar/developers/es/reference/integrations_api/_point_integration-api_integrator/patch): Mira la información necesaria para actualizar la configuración del integrador.
+
+- [Buscar en intención de pago](https://www.mercadopago.com.ar/developers/es/reference/integrations_api/_point_integration-api_payment-intents_paymentintentid/get): Buscar en intención de pago
+
+- [Crear dirección](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/addresses/create-address/post): Crear dirección
+
+- [Eliminar una dirección](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/addresses/delete-address/delete): Eliminar una dirección
+
+- [Obtener dirección](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/addresses/get-address/get): Obtener dirección
+
+- [Listar direcciones](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/addresses/list-addresses/get): Listar direcciones
+
+- [Actualizar dirección](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/addresses/update-address/put): Actualizar dirección
+
+- [Eliminar tarjeta](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/cards/delete-card/delete): Eliminar tarjeta
+
+- [Obtener tarjeta](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/cards/get-card/get): Obtener tarjeta
+
+- [Obtener tarjetas de un cliente](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/cards/get-customer-cards/get): Obtener tarjetas de un cliente
+
+- [Guardar tarjeta](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/cards/save-card/post): Guardar tarjeta
+
+- [Actualizar tarjeta](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/cards/update-card/put): Actualizar tarjeta
+
+- [Crear cancelación](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/create-cancellation/put): Crear cancelación
+
+- [Crear pago](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/create-payment/post): Crear pago
+
+- [Crear reembolso](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/create-refund/post): Crear reembolso 
+
+- [Crear cliente](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/customers/create-customer/post): Crear cliente
+
+- [Obtener cliente](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/customers/get-customer/get): Obtener cliente
+
+- [Buscar en clientes](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/customers/search-customer/get): Buscar en clientes
+
+- [Actualizar cliente](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/customers/update-customer/put): Actualizar cliente
+
+- [Obtener contracargo](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/get-chargeback/get): Obtener contracargo
+
+- [Obtener pago](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/get-payment/get): Obtener pago
+
+- [Obtener reembolso específico](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/get-refund/get): Obtener reembolso específico
+
+- [Obtener lista de reembolsos](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/get-refunds/get): Obtener lista de reembolsos
+
+- [Obtener tipos de documentos](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/identification-types/get): Obtener tipos de documentos
+
+- [Obtener medios de pago](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/payment-methods/get): Obtener medios de pago
+
+- [Buscar en pagos](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/search-payments/get): Buscar en pagos
+
+- [Actualizar pago](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api-payments/update-payment/put): Actualizar pago
+
+- [Agregar transacciones a la order](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/add-transaction-order/post): Agregar transacciones a la order
+
+- [Crear dirección](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/addresses/create-address/post): Crear dirección
+
+- [Eliminar una dirección](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/addresses/delete-address/delete): Eliminar una dirección
+
+- [Obtener dirección](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/addresses/get-address/get): Obtener dirección
+
+- [Listar direcciones](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/addresses/list-addresses/get): Listar direcciones
+
+- [Actualizar dirección](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/addresses/update-address/put): Actualizar dirección
+
+- [Cancelar order por ID](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/cancel-order/post): Cancelar order por ID
+
+- [Capturar order completamente](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/capture-order/post): Capturar order completamente
+
+- [Eliminar tarjeta](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/cards/delete-card/delete): Eliminar tarjeta
+
+- [Obtener tarjeta](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/cards/get-card/get): Obtener tarjeta
+
+- [Obtener tarjetas de un cliente](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/cards/get-customer-cards/get): Obtener tarjetas de un cliente
+
+- [Guardar tarjeta](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/cards/save-card/post): Guardar tarjeta
+
+- [Actualizar tarjeta](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/cards/update-card/put): Actualizar tarjeta
+
+- [Crear order](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/create-order/post): Crear order
+
+- [Crear cliente](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/customers/create-customer/post): Crear cliente
+
+- [Obtener cliente](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/customers/get-customer/get): Obtener cliente
+
+- [Buscar en clientes](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/customers/search-customer/get): Buscar en clientes
+
+- [Actualizar cliente](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/customers/update-customer/put): Actualizar cliente
+
+- [Eliminar una transacción de la order](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/delete-transaction-order/delete): Eliminar una transacción de la order
+
+- [Obtener contracargo](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/get-chargeback/get): Obtener contracargo
+
+- [Obtener order por ID](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/get-order/get): Obtener order por ID
+
+- [Obtener tipos de documentos](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/identification-types/get): Obtener tipos de documentos
+
+- [Obtener medios de pago](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/payment-methods/get): Obtener medios de pago
+
+- [Procesar order por ID](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/process-order/post): Procesar order por ID
+
+- [Reembolsar una order](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/refund-order/post): Reembolsar una order
+
+- [Buscar order](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/search-order/get): Buscar order.
+
+- [Actualizar una transacción de la order](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-api/update-transaction-order/put): Actualizar una transacción de la order
+
+- [Obtener contracargo](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/chargebacks/get): Obtener contracargo
+
+- [Crear cancelación](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/create-cancellation/put): Crear cancelación
+
+- [Crear reembolso](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/create-refund/post): Crear reembolso 
+
+- [Obtener pago](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/get-payment/get): Obtener pago
+
+- [Obtener reembolso específico](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/get-refund/get): Obtener reembolso específico
+
+- [Obtener lista de reembolsos](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/get-refunds/get): Obtener lista de reembolsos
+
+- [Obtener orden comercial](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/merchant_orders/get-merchant-order/get): Obtener orden comercial
+
+- [Buscar en órdenes comerciales](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/merchant_orders/search-merchant-order/get): Buscar en órdenes comerciales
+
+- [Actualizar orden comercial](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/merchant_orders/update-merchant-order/put): Actualizar orden comercial
+
+### reference / online-payments / checkout-pro / payment_methods
+
+- [Obtener medios de pago](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/payment_methods/get): Obtener medios de pago
+
+- [Obtener opciones de pago en cuotas](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/payment_methods/installments/get): Obtener opciones de pago en cuotas
+
+- [Crear preferencia](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/preferences/create-preference/post): Crear preferencia
+
+- [Obtener preferencia](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/preferences/get-preference/get): Obtener preferencia
+
+- [Buscar en preferencias](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/preferences/search-preferences/get): Buscar en preferencias
+
+- [Actualizar preferencia](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/preferences/update-preference/put): Actualizar preferencia
+
+- [Buscar en pagos](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/search-payments/get): Buscar en pagos
+
+- [Buscar en facturas](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/authorized-payment-search/get): Buscar en facturas
+
+- [Crear pago](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/create-payment/post): Crear pago
+
+- [Crear plan de suscripción](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/create-preapproval-plan/post): Crear plan de suscripción
+
+- [Crear suscripción](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/create-preapproval/post): Crear suscripción
+
+- [Exportar suscripciones](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/export-preapproval/get): Exportar suscripciones
+
+- [Obtener información de factura](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/get-authorized-payment/get): Obtener información de factura
+
+- [Obtener pago](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/get-payment/get): Obtener pago
+
+- [Obtener plan de suscripción](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/get-preapproval-plan/get): Obtener plan de suscripción
+
+- [Obtener suscripción](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/get-preapproval/get): Obtener suscripción
+
+- [Buscar en pagos](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/search-payments/get): Buscar en pagos
+
+- [Buscar en plan de suscripción](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/search-preapproval-plan/get): Buscar en plan de suscripción
+
+- [Buscar en suscripciones](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/search-preapproval/get): Buscar en suscripciones
+
+- [Actualizar plan de suscripción](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/update-preapproval-plan/put): Actualizar plan de suscripción
+
+- [Actualizar suscripción](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/update-preapproval/put): Actualizar suscripción
+
+### reference / qr-dynamic / _instore_orders_qr_seller_collectors_user_id_pos_external_pos_id_qrs
+
+- [Crear QR trama](https://www.mercadopago.com.ar/developers/es/reference/qr-dynamic/_instore_orders_qr_seller_collectors_user_id_pos_external_pos_id_qrs/post): Crear QR trama
+- [Crear orden](https://www.mercadopago.com.ar/developers/es/reference/qr-dynamic/_instore_orders_qr_seller_collectors_user_id_pos_external_pos_id_qrs/put): Crear orden
+
+- [Consultar reporte específico](https://www.mercadopago.com.ar/developers/es/reference/releases-report/search-report/get): Consultar reporte específico
+
+- [Consultar tarea de creación de reporte](https://www.mercadopago.com.ar/developers/es/reference/releases-report/search-task/get): Consultar tarea de creación de reporte
+
+- [Crear una nueva configuración](https://www.mercadopago.com.ar/developers/es/reference/settlements-report/create-new-configuration/post): Crear una nueva configuración
+
+- [Crear reporte](https://www.mercadopago.com.ar/developers/es/reference/settlements-report/create-report/post): Crear reporte
+
+- [Desactivar generación automática](https://www.mercadopago.com.ar/developers/es/reference/settlements-report/disable-automatic-generation/delete): Desactivar generación automática
+
+- [Descargar reporte](https://www.mercadopago.com.ar/developers/es/reference/settlements-report/download-report/get): Descargar reporte
+
+- [Activar generación automática](https://www.mercadopago.com.ar/developers/es/reference/settlements-report/enable-automatic-generation/post): Activar generación automática
+
+- [Consultar configuraciones](https://www.mercadopago.com.ar/developers/es/reference/settlements-report/query-configurations/get): Consultar configuraciones
+
+- [Consultar lista de reportes](https://www.mercadopago.com.ar/developers/es/reference/settlements-report/query-report/get): Consultar reporte
+
+- [Consultar tarea de creación de reporte](https://www.mercadopago.com.ar/developers/es/reference/settlements-report/query-task-status/get): Consultar tarea de creación de reporte
+
+- [Buscar reporte específico](https://www.mercadopago.com.ar/developers/es/reference/settlements-report/search-report/get): Buscar reporte
+
+- [Actualizar configuraciones](https://www.mercadopago.com.ar/developers/es/reference/settlements-report/update-configurations/put): Actualizar configuraciones
+
+---
+Generated: 2026-08-20 · ID: 1ea88594

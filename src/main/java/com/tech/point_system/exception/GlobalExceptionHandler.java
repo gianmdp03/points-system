@@ -86,13 +86,14 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
   }
 
-  @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-  public ResponseEntity<ErrorResponse> handleOptimisticLockingException(ObjectOptimisticLockingFailureException ex) {
+  @ExceptionHandler(PaymentGatewayException.class)
+  public ResponseEntity<ErrorResponse> handlePaymentGatewayException(PaymentGatewayException ex) {
     ErrorResponse error = new ErrorResponse(
-        HttpStatus.CONFLICT.value(),
-        "This account is already being modified by another operation. Please try again.",
+        HttpStatus.BAD_GATEWAY.value(),
+        "Payment Gateway Error",
         ex.getMessage()
     );
-    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    return new ResponseEntity<>(error, HttpStatus.BAD_GATEWAY);
   }
 }
+
