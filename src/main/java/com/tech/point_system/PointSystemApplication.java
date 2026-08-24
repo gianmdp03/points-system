@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableAsync
 @EnableCaching
 public class PointSystemApplication {
-0
+
     static void main(String[] args) {
         SpringApplication.run(PointSystemApplication.class, args);
     }

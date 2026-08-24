@@ -16,6 +16,8 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByDni(String dni);
 
+    Optional<User> findByEmail(String email);
+
     @Modifying(clearAutomatically = true)
     @Query("UPDATE User u SET u.isFreeTrialOver = true " +
             "WHERE u.role = :adminRole " +

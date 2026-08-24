@@ -37,6 +37,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/webhooks/**").permitAll()
                     .requestMatchers("/api/ping").permitAll()
                     .requestMatchers("/api/public/**").permitAll()
+                    .requestMatchers("/api/subscriptions/plans").permitAll()
                     .requestMatchers("/api/dev/**").permitAll()
                     .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(supabaseJwtConverter)));
@@ -56,9 +57,13 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:4200"));
+    configuration.setAllowedOriginPatterns(List.of(
+            "http://localhost:*",
+            "http://127.0.0.1:*",
+            "https://*.trycloudflare.com"
+    ));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control", "ngrok-skip-browser-warning"));
+    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control", "Accept", "X-Requested-With", "x-signature", "x-request-id"));
     configuration.setAllowCredentials(true);
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);

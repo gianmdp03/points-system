@@ -7,6 +7,7 @@ import com.tech.point_system._enum.SubscriptionStatus;
 import com.tech.point_system.dto.subscription.SubscriptionDetailDTO;
 import com.tech.point_system.dto.subscription.SubscriptionRequestDTO;
 import com.tech.point_system.dto.subscription.SubscriptionResponseDTO;
+import com.tech.point_system.exception.BadRequestException;
 import com.tech.point_system.exception.ConflictException;
 import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.model.Company;
@@ -16,7 +17,6 @@ import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.SubscriptionRepository;
 import com.tech.point_system.repository.UserRepository;
 import com.tech.point_system.service.PlanValidatorService;
-import com.tech.point_system.service.SubscriptionService;
 import com.tech.point_system.payment.PaymentStrategy;
 import com.tech.point_system.payment.PaymentStrategyFactory;
 import lombok.RequiredArgsConstructor;
@@ -47,11 +47,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
 
-        subscriptionRepository.findByUserId(userId).ifPresent(existingSub -> {
-            if (existingSub.getStatus() == SubscriptionStatus.ACTIVE) {
-                throw new ConflictException("Ya tienes una suscripcion activa.");
-            }
-        });
+        Optional<Subscription> existingSubOpt = subscriptionRepository.findTopByUserIdOrderByIdDesc(userId);
+        if (existingSubOpt.isPresent() && existingSubOpt.get().getStatus() == SubscriptionStatus.ACTIVE) {
+            throw new BadRequestException("El usuario ya cuenta con una suscripción activa");
+        }
 
         Company company = null;
         if (dto.companyId() != null) {
@@ -67,19 +66,19 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 ? now.plusYears(1)
                 : now.plusMonths(1);
 
-        Subscription subscription = Subscription.builder()
-                .user(user)
-                .company(company)
-                .plan(dto.plan())
-                .billingPeriod(dto.billingPeriod())
-                .status(gatewayResponse.status())
-                .provider(dto.provider())
-                .price(gatewayResponse.price())
-                .currency(gatewayResponse.currency())
-                .externalSubscriptionId(gatewayResponse.externalSubscriptionId())
-                .startDate(now)
-                .nextBillingDate(nextBilling)
-                .build();
+        // Si ya existe un intento previo (ej: PENDING o CANCELLED), actualizamos la fila en lugar de duplicar
+        Subscription subscription = existingSubOpt.orElseGet(() -> Subscription.builder().user(user).build());
+        subscription.setCompany(company);
+        subscription.setPlan(dto.plan());
+        subscription.setBillingPeriod(dto.billingPeriod());
+        subscription.setStatus(SubscriptionStatus.PENDING);
+        subscription.setProvider(dto.provider());
+        subscription.setPrice(gatewayResponse.price());
+        subscription.setCurrency(gatewayResponse.currency());
+        subscription.setExternalSubscriptionId(gatewayResponse.externalSubscriptionId());
+        subscription.setStartDate(now);
+        subscription.setNextBillingDate(nextBilling);
+        subscription.setCancelledAt(null);
 
         subscription = subscriptionRepository.save(subscription);
 
@@ -176,24 +175,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public SubscriptionDetailDTO getMySubscription(String userId) {
-        Optional<Subscription> subOpt = subscriptionRepository.findByUserId(userId);
-        if (subOpt.isPresent() && subOpt.get().getStatus() == SubscriptionStatus.ACTIVE) {
+        Optional<Subscription> subOpt = subscriptionRepository.findTopByUserIdOrderByIdDesc(userId);
+        if (subOpt.isPresent()) {
             Subscription subscription = subOpt.get();
-            return new SubscriptionDetailDTO(
-                    subscription.getId(),
-                    subscription.getUser().getId(),
-                    subscription.getPlan(),
-                    subscription.getBillingPeriod(),
-                    subscription.getStatus(),
-                    subscription.getProvider(),
-                    subscription.getPrice(),
-                    subscription.getCurrency(),
-                    subscription.getExternalSubscriptionId(),
-                    subscription.getStartDate(),
-                    subscription.getNextBillingDate(),
-                    subscription.getCancelledAt()
-            );
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+            boolean isEffective = subscription.getStatus() == SubscriptionStatus.ACTIVE
+                    || subscription.getStatus() == SubscriptionStatus.PENDING
+                    || (subscription.getStatus() == SubscriptionStatus.CANCELLED
+                        && subscription.getNextBillingDate() != null
+                        && subscription.getNextBillingDate().isAfter(now));
+
+            if (isEffective) {
+                return mapToDetailDTO(subscription);
+            }
         }
 
         User user = userRepository.findById(userId)
@@ -236,6 +232,23 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 null,
                 null,
                 null
+        );
+    }
+
+    private SubscriptionDetailDTO mapToDetailDTO(Subscription subscription) {
+        return new SubscriptionDetailDTO(
+                subscription.getId(),
+                subscription.getUser().getId(),
+                subscription.getPlan(),
+                subscription.getBillingPeriod(),
+                subscription.getStatus(),
+                subscription.getProvider(),
+                subscription.getPrice(),
+                subscription.getCurrency(),
+                subscription.getExternalSubscriptionId(),
+                subscription.getStartDate(),
+                subscription.getNextBillingDate(),
+                subscription.getCancelledAt()
         );
     }
 

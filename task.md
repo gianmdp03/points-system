@@ -5,13 +5,15 @@
   - [x] Declarar variables de entorno y defaults en `application.properties` y `secrets.properties` (`access-token`, `public-key`, `webhook-secret`, `back-url`, `base-url`).
 - [x] **Paso 2: Modelado de DTOs con Java 25 Records**
   - [x] Crear `MercadoPagoAutoRecurring` (`frequency`, `frequency_type`, `transaction_amount`, `currency_id`).
-  - [x] Crear `MercadoPagoPreapprovalRequest` (`reason`, `payer_email`, `auto_recurring`, `back_url`, `external_reference`, `status`).
+  - [x] Crear `MercadoPagoPreapprovalPlanRequest` (`reason`, `auto_recurring`, `back_url`).
+  - [x] Crear `MercadoPagoPreapprovalPlanSearchResponse` (`results`).
   - [x] Crear `MercadoPagoPreapprovalResponse` con mapeo de campos (`id`, `payer_id`, `payer_email`, `status`, `reason`, `init_point`, `external_reference`, `date_created`, `next_payment_date`).
   - [x] Crear `MercadoPagoPreapprovalUpdateRequest` (para actualizar plan o cancelar).
   - [x] Crear `MercadoPagoWebhookNotification` para procesar payloads de eventos entrantes.
-- [x] **Paso 3: Infraestructura HTTP (`RestClient`) para Mercado Pago**
+- [x] **Paso 3: Infraestructura HTTP (`RestClient`) y Gestor de Planes**
   - [x] Configurar bean `RestClient` dedicado con `baseUrl` y cabeceras por defecto (`Authorization: Bearer <token>`, `Content-Type: application/json`).
-  - [x] Crear servicio `MercadoPagoClient` para encapsular llamadas a `/preapproval`.
+  - [x] Crear servicio `MercadoPagoClient` para encapsular llamadas a `/preapproval_plan` y `/preapproval`.
+  - [x] Crear servicio `MercadoPagoPlanManager` con caché y deduplicación para planes fijos.
 - [x] **Paso 4: Implementación del Patrón Strategy (`MercadoPagoPaymentStrategy`)**
   - [x] Implementar `createSubscription` vinculando DTO interno con el request a Mercado Pago.
   - [x] Implementar `changeSubscriptionPlan` y `upgradeSubscription` invocando actualización en MP.

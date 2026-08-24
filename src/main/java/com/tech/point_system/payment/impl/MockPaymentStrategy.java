@@ -10,6 +10,7 @@ import com.tech.point_system.model.Subscription;
 import com.tech.point_system.model.User;
 import com.tech.point_system.payment.PaymentStrategy;
 import com.tech.point_system.repository.SubscriptionRepository;
+import com.tech.point_system.service.SubscriptionPlanConfigService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -22,7 +23,9 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class MockPaymentStrategy implements PaymentStrategy {
+
     private final SubscriptionRepository subscriptionRepository;
+    private final SubscriptionPlanConfigService planConfigService;
 
     @Override
     public PaymentProvider getProvider() {
@@ -35,7 +38,7 @@ public class MockPaymentStrategy implements PaymentStrategy {
 
         String externalId = "MOCK-SUB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String checkoutUrl = "https://checkout.mock.local/pay/" + externalId;
-        BigDecimal price = getMockPrice(dto.plan());
+        BigDecimal price = planConfigService.getPlanPrice(dto.plan(), dto.billingPeriod(), "ARS");
         String currency = "ARS";
 
         return new SubscriptionResponseDTO(
@@ -55,7 +58,7 @@ public class MockPaymentStrategy implements PaymentStrategy {
         log.info("[MOCK PAYMENT] Procesando cambio de plan de suscripcion {} de {} a {}",
                 currentSubscription.getExternalSubscriptionId(), currentSubscription.getPlan(), newPlan);
 
-        BigDecimal price = getMockPrice(newPlan);
+        BigDecimal price = planConfigService.getPlanPrice(newPlan, currentSubscription.getBillingPeriod(), "ARS");
         String currency = currentSubscription.getCurrency() != null ? currentSubscription.getCurrency() : "ARS";
         String externalId = currentSubscription.getExternalSubscriptionId() != null
                 ? currentSubscription.getExternalSubscriptionId()
@@ -102,15 +105,5 @@ public class MockPaymentStrategy implements PaymentStrategy {
         subscriptionRepository.save(subscription);
 
         log.info("[MOCK PAYMENT] Estado de suscripcion {} actualizado a {} via Webhook", externalId, statusStr);
-    }
-
-    private BigDecimal getMockPrice(SubscriptionPlan plan) {
-        if (plan == null) return BigDecimal.ZERO;
-        return switch (plan) {
-            case NONE, FREE_TRIAL -> BigDecimal.ZERO;
-            case BASIC -> new BigDecimal("9900.00");
-            case PRO -> new BigDecimal("19900.00");
-            case ENTERPRISE -> new BigDecimal("39900.00");
-        };
     }
 }

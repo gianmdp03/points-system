@@ -1,9 +1,11 @@
 package com.tech.point_system.controller;
 
 import com.tech.point_system._enum.SubscriptionPlan;
+import com.tech.point_system.dto.subscription.PlanConfigDTO;
 import com.tech.point_system.dto.subscription.SubscriptionDetailDTO;
 import com.tech.point_system.dto.subscription.SubscriptionRequestDTO;
 import com.tech.point_system.dto.subscription.SubscriptionResponseDTO;
+import com.tech.point_system.service.SubscriptionPlanConfigService;
 import com.tech.point_system.service.SubscriptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +16,20 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/subscriptions")
 @RequiredArgsConstructor
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
+    private final SubscriptionPlanConfigService subscriptionPlanConfigService;
+
+    @GetMapping("/plans")
+    public ResponseEntity<List<PlanConfigDTO>> getPlans() {
+        return ResponseEntity.ok(subscriptionPlanConfigService.getCommercialPlans());
+    }
 
     @PreAuthorize("hasRole('COMPANY_ADMIN')")
     @PostMapping

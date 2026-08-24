@@ -33,8 +33,15 @@ public class PlanValidatorService {
 
     public SubscriptionPlan getActivePlan(String companyAdminId) {
         Subscription subscription = subscriptionRepository.findByUserId(companyAdminId).orElse(null);
-        if (subscription != null && subscription.getStatus() == SubscriptionStatus.ACTIVE) {
-            return subscription.getPlan();
+        if (subscription != null) {
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+            boolean isEffective = subscription.getStatus() == SubscriptionStatus.ACTIVE
+                    || (subscription.getStatus() == SubscriptionStatus.CANCELLED
+                        && subscription.getNextBillingDate() != null
+                        && subscription.getNextBillingDate().isAfter(now));
+            if (isEffective) {
+                return subscription.getPlan();
+            }
         }
 
         User user = userRepository.findById(companyAdminId).orElse(null);
