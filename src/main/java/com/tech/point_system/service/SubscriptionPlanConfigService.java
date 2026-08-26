@@ -6,6 +6,7 @@ import com.tech.point_system.config.SubscriptionPlanProperties;
 import com.tech.point_system.dto.subscription.PlanConfigDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ public class SubscriptionPlanConfigService {
 
     private final SubscriptionPlanProperties properties;
 
+    @Cacheable(value = "subscription_commercial_plans")
     public List<PlanConfigDTO> getCommercialPlans() {
         return List.of(
                 getPlanConfig(SubscriptionPlan.BASIC),
@@ -44,8 +46,12 @@ public class SubscriptionPlanConfigService {
                 props.getName(),
                 props.getTagline(),
                 props.getPriceMonthlyArs(),
+                props.getPriceQuarterlyArs() != null && props.getPriceQuarterlyArs().compareTo(BigDecimal.ZERO) > 0 ? props.getPriceQuarterlyArs() : props.getPriceMonthlyArs().multiply(BigDecimal.valueOf(3)),
+                props.getPriceSemiannualArs() != null && props.getPriceSemiannualArs().compareTo(BigDecimal.ZERO) > 0 ? props.getPriceSemiannualArs() : props.getPriceMonthlyArs().multiply(BigDecimal.valueOf(6)),
                 props.getPriceYearlyArs(),
                 props.getPriceMonthlyUsd(),
+                props.getPriceQuarterlyUsd() != null && props.getPriceQuarterlyUsd().compareTo(BigDecimal.ZERO) > 0 ? props.getPriceQuarterlyUsd() : props.getPriceMonthlyUsd().multiply(BigDecimal.valueOf(3)),
+                props.getPriceSemiannualUsd() != null && props.getPriceSemiannualUsd().compareTo(BigDecimal.ZERO) > 0 ? props.getPriceSemiannualUsd() : props.getPriceMonthlyUsd().multiply(BigDecimal.valueOf(6)),
                 props.getPriceYearlyUsd(),
                 props.getMaxClients(),
                 props.getMaxRewards(),
@@ -64,11 +70,12 @@ public class SubscriptionPlanConfigService {
         PlanConfigDTO config = getPlanConfig(plan);
         boolean isUsd = currency != null && currency.equalsIgnoreCase("USD");
 
-        if (period == BillingPeriod.YEARLY) {
-            return isUsd ? config.priceYearlyUsd() : config.priceYearlyArs();
-        } else {
-            return isUsd ? config.priceMonthlyUsd() : config.priceMonthlyArs();
-        }
+        return switch (period) {
+            case MONTHLY -> isUsd ? config.priceMonthlyUsd() : config.priceMonthlyArs();
+            case QUARTERLY -> isUsd ? config.priceQuarterlyUsd() : config.priceQuarterlyArs();
+            case SEMIANNUAL -> isUsd ? config.priceSemiannualUsd() : config.priceSemiannualArs();
+            case YEARLY -> isUsd ? config.priceYearlyUsd() : config.priceYearlyArs();
+        };
     }
 
     private PlanConfigDTO getDefaultFreePlan(SubscriptionPlan plan) {
@@ -77,6 +84,10 @@ public class SubscriptionPlanConfigService {
                     SubscriptionPlan.FREE_TRIAL,
                     "Prueba Gratuita",
                     "Periodo de prueba activo de 30 días sin costo.",
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
                     BigDecimal.ZERO,
                     BigDecimal.ZERO,
                     BigDecimal.ZERO,
@@ -97,6 +108,10 @@ public class SubscriptionPlanConfigService {
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 0,
                 0,
                 0,
@@ -113,8 +128,12 @@ public class SubscriptionPlanConfigService {
                     "Plan Emprendedor",
                     "Ideal para pequeños locales o comercios en etapa inicial.",
                     new BigDecimal("9900.00"),
+                    new BigDecimal("26900.00"),
+                    new BigDecimal("49900.00"),
                     new BigDecimal("99000.00"),
                     new BigDecimal("15.00"),
+                    new BigDecimal("40.00"),
+                    new BigDecimal("75.00"),
                     new BigDecimal("150.00"),
                     100,
                     5,
@@ -135,8 +154,12 @@ public class SubscriptionPlanConfigService {
                     "Plan Crecimiento",
                     "Para marcas en expansión que buscan automatizar su fidelización.",
                     new BigDecimal("19900.00"),
+                    new BigDecimal("53900.00"),
+                    new BigDecimal("99900.00"),
                     new BigDecimal("199000.00"),
                     new BigDecimal("29.00"),
+                    new BigDecimal("79.00"),
+                    new BigDecimal("149.00"),
                     new BigDecimal("290.00"),
                     1000,
                     -1,
@@ -157,8 +180,12 @@ public class SubscriptionPlanConfigService {
                     "Plan Corporativo",
                     "Franquicias o cadenas con múltiples sucursales y alto volumen.",
                     new BigDecimal("39900.00"),
+                    new BigDecimal("107900.00"),
+                    new BigDecimal("199900.00"),
                     new BigDecimal("399000.00"),
                     new BigDecimal("59.00"),
+                    new BigDecimal("159.00"),
+                    new BigDecimal("299.00"),
                     new BigDecimal("590.00"),
                     -1,
                     -1,

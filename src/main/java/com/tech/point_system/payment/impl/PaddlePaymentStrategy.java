@@ -25,18 +25,12 @@ public class PaddlePaymentStrategy implements PaymentStrategy {
     }
 
     @Override
-    public SubscriptionResponseDTO changeSubscriptionPlan(Subscription currentSubscription, SubscriptionPlan newPlan) {
+    public SubscriptionResponseDTO upgradeSubscription(Subscription currentSubscription, SubscriptionPlan newPlan) {
         throw new UnsupportedOperationException("Paddle no está activo en el MVP. Utiliza MOCK.");
     }
 
-    @Override
-    public SubscriptionResponseDTO upgradeSubscription(Subscription currentSubscription, SubscriptionPlan newPlan) {
-        return changeSubscriptionPlan(currentSubscription, newPlan);
-    }
-
-    @Override
-    public void cancelSubscription(String externalSubscriptionId) {}
 
     @Override
     public void processWebhook(Map<String, Object> payload) {}
 }
+

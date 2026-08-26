@@ -1,8 +1,7 @@
 package com.tech.point_system.controller;
 
 import com.tech.point_system.dto.supabaseWebhook.SupabaseWebhookDTO;
-// Asegúrate de importar el servicio o su interfaz correspondiente
-import com.tech.point_system.service.impl.WebhookServiceImpl;
+import com.tech.point_system.service.WebhookService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class WebhookController {
 
-  private final WebhookServiceImpl webhookService;
+  private final WebhookService webhookService;
 
   @Value("${supabase.webhook.secret}")
   private String webhookSecret;

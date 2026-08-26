@@ -90,9 +90,8 @@ public class PointlyToolsConfig {
         }
         Client client = clientOpt.get();
 
-        Optional<Company> companyOpt = companyRepository.findAll().stream()
-                .filter(c -> c.getName().equalsIgnoreCase(request.companyName().trim()))
-                .findFirst();
+        String companyName = request.companyName() != null ? request.companyName().trim() : "";
+        Optional<Company> companyOpt = companyRepository.findByNameIgnoreCase(companyName);
 
         if (companyOpt.isEmpty()) {
             return new ClientPointsResponse(false, client.getName(), request.companyName(), 0, false, null, false, null, "No se encontro el comercio indicado.");
@@ -122,9 +121,8 @@ public class PointlyToolsConfig {
 
     @Tool(description = "Obtiene los detalles completos de fidelizacion de un comercio ingresando su nombre: como acumular puntos ($ por punto), politicas de vencimiento de puntos, politicas de baja de clientes inactivos, cantidad de premios y promociones activas.")
     public CompanyDetailsResponse getCompanyDetails(CompanyDetailsRequest request) {
-        Optional<Company> companyOpt = companyRepository.findAll().stream()
-                .filter(c -> c.getName().equalsIgnoreCase(request.companyName().trim()))
-                .findFirst();
+        String companyName = request.companyName() != null ? request.companyName().trim() : "";
+        Optional<Company> companyOpt = companyRepository.findByNameIgnoreCase(companyName);
 
         if (companyOpt.isEmpty()) {
             return new CompanyDetailsResponse(false, request.companyName(), null, null, null, 0, null, "Comercio no encontrado.");
@@ -160,18 +158,15 @@ public class PointlyToolsConfig {
 
     @Tool(description = "Obtiene el catalogo de premios y recompensas activos disponibles para canjear en un comercio o empresa especifico ingresando su nombre.")
     public RewardsResponse getAvailableRewards(RewardsRequest request) {
-        Optional<Company> companyOpt = companyRepository.findAll().stream()
-                .filter(c -> c.getName().equalsIgnoreCase(request.companyName().trim()))
-                .findFirst();
+        String companyName = request.companyName() != null ? request.companyName().trim() : "";
+        Optional<Company> companyOpt = companyRepository.findByNameIgnoreCase(companyName);
 
         if (companyOpt.isEmpty()) {
             return new RewardsResponse(false, request.companyName(), List.of(), "No se encontro el comercio.");
         }
         Company company = companyOpt.get();
 
-        List<Reward> rewards = rewardRepository.findAll().stream()
-                .filter(r -> r.getCompany().getId().equals(company.getId()) && Boolean.TRUE.equals(r.getIsEnabled()))
-                .toList();
+        List<Reward> rewards = rewardRepository.findByCompanyIdAndIsEnabledTrue(company.getId());
 
         List<RewardInfo> rewardInfos = rewards.stream()
                 .map(r -> new RewardInfo(r.getName(), r.getDescription(), r.getCostInPoints()))
@@ -182,9 +177,8 @@ public class PointlyToolsConfig {
 
     @Tool(description = "Obtiene las promociones de multiplicadores de puntos (ejemplo: 2x, 3x) vigentes en un comercio especifico ingresando su nombre.")
     public PromotionResponse getActivePromotions(PromotionRequest request) {
-        Optional<Company> companyOpt = companyRepository.findAll().stream()
-                .filter(c -> c.getName().equalsIgnoreCase(request.companyName().trim()))
-                .findFirst();
+        String companyName = request.companyName() != null ? request.companyName().trim() : "";
+        Optional<Company> companyOpt = companyRepository.findByNameIgnoreCase(companyName);
 
         if (companyOpt.isEmpty()) {
             return new PromotionResponse(false, request.companyName(), null, "Comercio no encontrado.", 1.0);

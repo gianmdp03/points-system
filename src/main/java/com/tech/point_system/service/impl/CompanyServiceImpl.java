@@ -12,6 +12,8 @@ import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.CompanyService;
 import com.tech.point_system.service.PlanValidatorService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,7 +35,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     @Transactional
     public CompanyDetailDTO addCompany(String companyAdminId, CompanyRequestDTO dto) {
-        int currentCompanies = repository.findAllByAdminId(companyAdminId).size();
+        int currentCompanies = (int) repository.countByAdminId(companyAdminId);
         planValidatorService.validateCompanyCreation(companyAdminId, currentCompanies);
         Company company = mapper.toEntity(dto);
         User user = userRepository.findById(companyAdminId).orElseThrow(()-> new NotFoundException("Company Admin Not Found"));
@@ -44,6 +46,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "public_company_name", key = "#companyId")
     public CompanyDetailDTO updateCompany(String companyAdminId, Long companyId, CompanyUpdateDTO dto) {
         Company company = accessValidator.validateAccess(companyId, companyAdminId);
         mapper.updateEntityFromDTO(dto, company);
@@ -53,11 +56,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public Page<CompanyListDTO> listCompanies(Pageable pageable) {
-        Page<Company> companies = repository.findAll(pageable);
-        if(companies.isEmpty()) {
-            return Page.empty();
-        }
-        return companies.map(mapper::toListDTO);
+        return repository.findAll(pageable).map(mapper::toListDTO);
     }
 
     @Override
@@ -68,6 +67,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "public_company_name", key = "#companyId")
     public void disableCompany(String companyAdminId, Long companyId) {
         Company company = accessValidator.validateAccess(companyId, companyAdminId);
         company.setIsEnabled(false);
@@ -77,6 +77,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "public_company_name", key = "#companyId")
     public void enableCompany(String companyAdminId, Long companyId){
         Company company = accessValidator.validateAccess(companyId, companyAdminId);
         company.setIsEnabled(true);

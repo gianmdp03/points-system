@@ -23,7 +23,8 @@ import java.util.Set;
         indexes = {
                 @Index(name = "idx_company_user_id", columnList = "user_id"),
                 @Index(name = "idx_company_enabled_disabled", columnList = "isEnabled, disabledDate"),
-                @Index(name = "idx_company_purge_status", columnList = "isInactiveClientPurgeEnabled, inactiveClientPurgeDays")
+                @Index(name = "idx_company_purge_status", columnList = "isInactiveClientPurgeEnabled, inactiveClientPurgeDays"),
+                @Index(name = "idx_company_name", columnList = "name")
         }
 )
 public class Company {
@@ -79,4 +80,16 @@ public class Company {
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Sale> sales = new HashSet<>();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Company other)) return false;
+        return this.id != null && this.id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

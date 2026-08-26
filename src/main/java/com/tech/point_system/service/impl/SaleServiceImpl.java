@@ -10,10 +10,7 @@ import com.tech.point_system.model.Client;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.Sale;
 import com.tech.point_system.repository.ClientRepository;
-import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.SaleRepository;
-import com.tech.point_system.model.User;
-import com.tech.point_system.repository.UserRepository;
 import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.SaleService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +19,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Service
 @Transactional(readOnly = true)
@@ -44,7 +44,7 @@ public class SaleServiceImpl implements SaleService {
         Sale sale = mapper.toEntity(dto);
         sale.setCompany(company);
         sale.setClient(client);
-        sale.setCreatedAt(java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC));
+        sale.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
         sale = repository.save(sale);
 
         applicationEventPublisher.publishEvent(new SaleCreatedEvent(dto.amount(), company, client));
@@ -54,17 +54,16 @@ public class SaleServiceImpl implements SaleService {
   @Override
   public Page<SaleListDTO> listCompaniesSales(String companyAdminId, Long companyId, Pageable pageable){
       companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
-      Page<Sale> sales = repository.findByCompanyId(companyId, pageable);
-      if(sales.isEmpty()){
-          return Page.empty();
-      }
-      return sales.map(mapper::toListDTO);
+      return repository.findByCompanyId(companyId, pageable).map(mapper::toListDTO);
   }
 
   @Override
   public SaleDetailDTO getSaleById(String companyAdminId, Long companyId, Long id) {
       companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
-    Sale sale = repository.findById(id).orElseThrow(() -> new NotFoundException("Sale ID not found!"));
-    return mapper.toDetailDTO(sale);
+      Sale sale = repository.findById(id).orElseThrow(() -> new NotFoundException("Sale ID not found!"));
+      if (sale.getCompany() == null || !sale.getCompany().getId().equals(companyId)) {
+          throw new NotFoundException("Sale ID not found for company " + companyId);
+      }
+      return mapper.toDetailDTO(sale);
   }
 }

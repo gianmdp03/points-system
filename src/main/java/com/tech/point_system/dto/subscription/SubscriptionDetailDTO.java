@@ -19,6 +19,7 @@ public record SubscriptionDetailDTO(
         String currency,
         String externalSubscriptionId,
         OffsetDateTime startDate,
-        OffsetDateTime nextBillingDate,
-        OffsetDateTime cancelledAt
+        OffsetDateTime planExpirationDate,
+        Long daysRemaining
 ) {}
+

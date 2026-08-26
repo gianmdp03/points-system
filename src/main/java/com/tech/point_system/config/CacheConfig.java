@@ -14,6 +14,8 @@ public class CacheConfig {
     public static final String PUBLIC_COMPANY_PRODUCTS = "public_company_products";
     public static final String PUBLIC_COMPANY_REWARDS = "public_company_rewards";
     public static final String COMPANY_ACTIVE_PROMOTIONS = "company_active_promotions";
+    public static final String PUBLIC_COMPANY_NAME = "public_company_name";
+    public static final String SUBSCRIPTION_COMMERCIAL_PLANS = "subscription_commercial_plans";
 
     private ConcurrentMapCacheManager cacheManager;
 
@@ -22,7 +24,9 @@ public class CacheConfig {
         this.cacheManager = new ConcurrentMapCacheManager(
                 PUBLIC_COMPANY_PRODUCTS,
                 PUBLIC_COMPANY_REWARDS,
-                COMPANY_ACTIVE_PROMOTIONS
+                COMPANY_ACTIVE_PROMOTIONS,
+                PUBLIC_COMPANY_NAME,
+                SUBSCRIPTION_COMMERCIAL_PLANS
         );
         return this.cacheManager;
     }

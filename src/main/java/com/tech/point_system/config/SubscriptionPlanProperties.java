@@ -25,8 +25,12 @@ public class SubscriptionPlanProperties {
         private String name = "";
         private String tagline = "";
         private BigDecimal priceMonthlyArs = BigDecimal.ZERO;
+        private BigDecimal priceQuarterlyArs = BigDecimal.ZERO;
+        private BigDecimal priceSemiannualArs = BigDecimal.ZERO;
         private BigDecimal priceYearlyArs = BigDecimal.ZERO;
         private BigDecimal priceMonthlyUsd = BigDecimal.ZERO;
+        private BigDecimal priceQuarterlyUsd = BigDecimal.ZERO;
+        private BigDecimal priceSemiannualUsd = BigDecimal.ZERO;
         private BigDecimal priceYearlyUsd = BigDecimal.ZERO;
         private int maxClients = 0;
         private int maxRewards = 0;

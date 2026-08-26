@@ -1,6 +1,5 @@
 package com.tech.point_system.task;
 
-import com.tech.point_system.repository.SaleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -17,6 +16,7 @@ public class ApplicationStartupTasksRunner {
     private final CompanyTasks companyTasks;
     private final PointsExpirationTasks pointsExpirationTasks;
     private final InactiveClientPurgeTasks inactiveClientPurgeTasks;
+    private final SubscriptionExpirationTasks subscriptionExpirationTasks;
 
     /**
      * Se ejecuta automáticamente y de forma asíncrona una vez que la aplicación arranca (ApplicationReadyEvent).
@@ -58,8 +58,17 @@ public class ApplicationStartupTasksRunner {
             log.error("[STARTUP ERROR] Falló la purga de clientes inactivos al iniciar:", e);
         }
 
+        try {
+            log.info("[STARTUP] 5/5 Verificando suscripciones prepagas expiradas y limpiando órdenes PENDING abandonadas...");
+            subscriptionExpirationTasks.processSubscriptionExpirations();
+            subscriptionExpirationTasks.purgeAbandonedPendingSubscriptions();
+        } catch (Exception e) {
+            log.error("[STARTUP ERROR] Falló la verificación de suscripciones expiradas al iniciar:", e);
+        }
+
         log.info("==================================================================");
         log.info("[STARTUP RECOVERY] Todas las tareas de mantenimiento completadas exitosamente.");
         log.info("==================================================================");
     }
 }
+

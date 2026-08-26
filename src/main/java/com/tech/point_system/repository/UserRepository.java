@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -27,5 +29,18 @@ public interface UserRepository extends JpaRepository<User, String> {
     int disableExpiredFreeTrials(
             @Param("today") LocalDate today,
             @Param("adminRole") Role adminRole
+    );
+
+    @Query("SELECT u FROM User u WHERE u.currentPlan <> :nonePlan AND u.planExpirationDate IS NOT NULL AND u.planExpirationDate < :cutoff")
+    List<User> findAllExpiredUsers(
+            @Param("nonePlan") com.tech.point_system._enum.SubscriptionPlan nonePlan,
+            @Param("cutoff") OffsetDateTime cutoff
+    );
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE User u SET u.currentPlan = :nonePlan WHERE u.currentPlan <> :nonePlan AND u.planExpirationDate IS NOT NULL AND u.planExpirationDate < :cutoff")
+    int expireUserPlans(
+            @Param("nonePlan") com.tech.point_system._enum.SubscriptionPlan nonePlan,
+            @Param("cutoff") OffsetDateTime cutoff
     );
 }

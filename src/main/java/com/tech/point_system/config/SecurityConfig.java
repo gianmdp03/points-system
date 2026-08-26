@@ -57,13 +57,9 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOriginPatterns(List.of(
-            "http://localhost:*",
-            "http://127.0.0.1:*",
-            "https://*.trycloudflare.com"
-    ));
+    configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:4200"));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control", "Accept", "X-Requested-With", "x-signature", "x-request-id"));
+    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control","ngrok-skip-browser-warning" ,"Accept", "X-Requested-With", "x-signature", "x-request-id"));
     configuration.setAllowCredentials(true);
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);

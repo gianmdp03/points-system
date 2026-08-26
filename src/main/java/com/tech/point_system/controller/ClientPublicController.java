@@ -10,14 +10,12 @@ import com.tech.point_system.dto.reward.RewardListDTO;
 import com.tech.point_system.exception.ConflictException;
 import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.mapper.PointsAccountMapper;
-import com.tech.point_system.mapper.PromotionMapper;
 import com.tech.point_system.model.Client;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.PointsAccount;
 import com.tech.point_system.repository.ClientRepository;
 import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.PointsAccountRepository;
-import com.tech.point_system.repository.PromotionRepository;
 import com.tech.point_system.service.CompanyService;
 import com.tech.point_system.service.PlanValidatorService;
 import com.tech.point_system.service.PublicCatalogService;
@@ -47,8 +45,6 @@ public class ClientPublicController {
     private final PointsAccountRepository pointsAccountRepository;
     private final PointsAccountMapper pointsAccountMapper;
     private final PublicCatalogService publicCatalogService;
-    private final PromotionRepository promotionRepository;
-    private final PromotionMapper promotionMapper;
     private final PlanValidatorService planValidatorService;
 
     @PostMapping("/join")
@@ -116,11 +112,7 @@ public class ClientPublicController {
 
         List<ProductListDTO> productDTOs = publicCatalogService.getPublicProducts(companyId);
         List<RewardListDTO> rewardDTOs = publicCatalogService.getPublicRewards(companyId);
-
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        List<PromotionListDTO> promotionDTOs = promotionRepository.findActivePromotions(companyId, now).stream()
-                .map(promotionMapper::toListDTO)
-                .toList();
+        List<PromotionListDTO> promotionDTOs = publicCatalogService.getPublicPromotions(companyId);
 
         CompanyPublicDetailDTO response = new CompanyPublicDetailDTO(
                 company.getId(),

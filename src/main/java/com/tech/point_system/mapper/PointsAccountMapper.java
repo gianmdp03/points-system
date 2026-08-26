@@ -13,6 +13,8 @@ public interface PointsAccountMapper {
     @Mapping(target = "company", ignore = true)
     @Mapping(target = "balance", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "lastActivityDate", ignore = true)
+    @Mapping(target = "transactions", ignore = true)
     PointsAccount toEntity(PointsAccountRequestDTO dto);
 
     PointsAccountDetailDTO toDetailDTO(PointsAccount entity);

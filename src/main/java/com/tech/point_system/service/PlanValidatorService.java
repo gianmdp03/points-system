@@ -1,11 +1,9 @@
 package com.tech.point_system.service;
 
 import com.tech.point_system._enum.SubscriptionPlan;
-import com.tech.point_system._enum.SubscriptionStatus;
 import com.tech.point_system.config.PlanConfigProperties;
 import com.tech.point_system.exception.ConflictException;
 import com.tech.point_system.model.Company;
-import com.tech.point_system.model.Subscription;
 import com.tech.point_system.model.User;
 import com.tech.point_system.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +22,6 @@ import java.util.List;
 public class PlanValidatorService {
 
     private final PlanConfigProperties planConfigProperties;
-    private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final PointsAccountRepository pointsAccountRepository;
@@ -32,21 +29,18 @@ public class PlanValidatorService {
     private final PromotionRepository promotionRepository;
 
     public SubscriptionPlan getActivePlan(String companyAdminId) {
-        Subscription subscription = subscriptionRepository.findByUserId(companyAdminId).orElse(null);
-        if (subscription != null) {
-            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-            boolean isEffective = subscription.getStatus() == SubscriptionStatus.ACTIVE
-                    || (subscription.getStatus() == SubscriptionStatus.CANCELLED
-                        && subscription.getNextBillingDate() != null
-                        && subscription.getNextBillingDate().isAfter(now));
-            if (isEffective) {
-                return subscription.getPlan();
-            }
-        }
-
         User user = userRepository.findById(companyAdminId).orElse(null);
-        if (user != null && Boolean.FALSE.equals(user.getIsFreeTrialOver())) {
-            return SubscriptionPlan.FREE_TRIAL;
+        if (user != null) {
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+            if (user.getCurrentPlan() != null && user.getCurrentPlan() != SubscriptionPlan.NONE) {
+                if (user.getPlanExpirationDate() == null || user.getPlanExpirationDate().isAfter(now)) {
+                    return user.getCurrentPlan();
+                }
+            }
+
+            if (Boolean.FALSE.equals(user.getIsFreeTrialOver())) {
+                return SubscriptionPlan.FREE_TRIAL;
+            }
         }
 
         return SubscriptionPlan.NONE;

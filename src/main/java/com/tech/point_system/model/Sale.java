@@ -17,7 +17,8 @@ import java.time.ZoneOffset;
         name = "sales",
         indexes = {
                 @Index(name = "idx_sale_company_id", columnList = "company_id"),
-                @Index(name = "idx_sale_client_id", columnList = "client_id")
+                @Index(name = "idx_sale_client_id", columnList = "client_id"),
+                @Index(name = "idx_sale_company_created", columnList = "company_id, createdAt")
         }
 )
 public class Sale {

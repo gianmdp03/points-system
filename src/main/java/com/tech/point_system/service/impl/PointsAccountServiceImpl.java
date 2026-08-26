@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -36,7 +37,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class PointsAccountServiceImpl implements PointsAccountService {
   private final PointsAccountRepository pointsAccountRepository;
-  private final CompanyRepository companyRepository;
   private final ClientRepository clientRepository;
   private final PointsAccountMapper pointsAccountMapper;
   private final PointsTransactionRepository transactionRepository;
@@ -75,22 +75,14 @@ public class PointsAccountServiceImpl implements PointsAccountService {
   @Override
   public Page<PointsAccountDetailDTO> listPointsAccounts(String companyAdminId, Long companyId, Pageable pageable) {
     companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
-    Page<PointsAccount> pointsAccounts = pointsAccountRepository.findByCompanyId(companyId, pageable);
-    if (pointsAccounts.isEmpty()) {
-      return Page.empty();
-    }
-    return pointsAccounts.map(pointsAccountMapper::toDetailDTO);
+    return pointsAccountRepository.findByCompanyId(companyId, pageable).map(pointsAccountMapper::toDetailDTO);
   }
 
   @Override
   public Page<PointsTransactionDetailDTO> getTransactionHistory(Long clientId, Long companyId, Pageable pageable) {
     PointsAccount pointsAccount = pointsAccountRepository.findByClientIdAndCompanyId(clientId, companyId)
             .orElseThrow(() -> new NotFoundException("Points account not found for client " + clientId + " in company " + companyId));
-    Page<PointsTransaction> transactions = transactionRepository.findByPointsAccount(pointsAccount, pageable);
-    if (transactions.isEmpty()) {
-      return Page.empty();
-    }
-    return transactions.map(transactionMapper::toDetailDTO);
+    return transactionRepository.findByPointsAccount(pointsAccount, pageable).map(transactionMapper::toDetailDTO);
   }
 
   @EventListener
@@ -133,7 +125,7 @@ public class PointsAccountServiceImpl implements PointsAccountService {
 
     int pointsToEarn = BigDecimal.valueOf(basePoints)
             .multiply(multiplier)
-            .setScale(0, BigDecimal.ROUND_HALF_UP)
+            .setScale(0, RoundingMode.HALF_UP)
             .intValue();
 
     if (pointsToEarn <= 0) {

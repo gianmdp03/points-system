@@ -1,5 +1,6 @@
 package com.tech.point_system.service.impl;
 
+import com.tech.point_system._enum.SubscriptionPlan;
 import com.tech.point_system.dto.user.UserDetailDTO;
 import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.mapper.UserMapper;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,8 @@ public class UserServiceImpl implements UserService {
         user.setFreeTrialStartTime(now);
         user.setFreeTrialEndTime(endTime);
         user.setIsFreeTrialOver(false);
+        user.setCurrentPlan(SubscriptionPlan.FREE_TRIAL);
+        user.setPlanExpirationDate(endTime.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC));
         user = userRepository.save(user);
         return userMapper.toDetailDTO(user);
     }

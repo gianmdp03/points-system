@@ -1,7 +1,9 @@
 package com.tech.point_system._enum;
 
-public enum SubscriptionStatus {PENDING,
-    ACTIVE,
+public enum SubscriptionStatus {
+    PENDING,
+    APPROVED,
     PAYMENT_FAILED,
-    CANCELLED,
-    EXPIRED}
+    EXPIRED
+}
+

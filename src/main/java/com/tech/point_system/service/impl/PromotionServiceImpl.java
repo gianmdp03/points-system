@@ -8,7 +8,6 @@ import com.tech.point_system.exception.NotFoundException;
 import com.tech.point_system.mapper.PromotionMapper;
 import com.tech.point_system.model.Company;
 import com.tech.point_system.model.Promotion;
-import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.PromotionRepository;
 import com.tech.point_system.service.CompanyAccessValidator;
 import com.tech.point_system.service.PlanValidatorService;
@@ -26,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class PromotionServiceImpl implements PromotionService {
 
   private final PromotionRepository promotionRepository;
-  private final CompanyRepository companyRepository;
   private final PromotionMapper promotionMapper;
   private final CompanyAccessValidator companyAccessValidator;
   private final PlanValidatorService planValidatorService;

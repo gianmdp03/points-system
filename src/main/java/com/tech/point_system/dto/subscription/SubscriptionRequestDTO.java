@@ -17,7 +17,7 @@ public record SubscriptionRequestDTO(
         BillingPeriod billingPeriod,
 
         @Size(max = 500)
-        String returnUrl,
-
-        Long companyId
+        String returnUrl
 ) {}
+
+

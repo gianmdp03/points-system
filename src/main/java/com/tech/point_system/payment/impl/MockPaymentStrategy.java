@@ -44,7 +44,7 @@ public class MockPaymentStrategy implements PaymentStrategy {
         return new SubscriptionResponseDTO(
                 null,
                 dto.plan(),
-                SubscriptionStatus.ACTIVE,
+                SubscriptionStatus.APPROVED,
                 getProvider(),
                 price,
                 currency,
@@ -54,8 +54,8 @@ public class MockPaymentStrategy implements PaymentStrategy {
     }
 
     @Override
-    public SubscriptionResponseDTO changeSubscriptionPlan(Subscription currentSubscription, SubscriptionPlan newPlan) {
-        log.info("[MOCK PAYMENT] Procesando cambio de plan de suscripcion {} de {} a {}",
+    public SubscriptionResponseDTO upgradeSubscription(Subscription currentSubscription, SubscriptionPlan newPlan) {
+        log.info("[MOCK PAYMENT] Procesando upgrade de suscripcion {} de {} a {}",
                 currentSubscription.getExternalSubscriptionId(), currentSubscription.getPlan(), newPlan);
 
         BigDecimal price = planConfigService.getPlanPrice(newPlan, currentSubscription.getBillingPeriod(), "ARS");
@@ -67,7 +67,7 @@ public class MockPaymentStrategy implements PaymentStrategy {
         return new SubscriptionResponseDTO(
                 currentSubscription.getId(),
                 newPlan,
-                SubscriptionStatus.ACTIVE,
+                SubscriptionStatus.APPROVED,
                 getProvider(),
                 price,
                 currency,
@@ -76,15 +76,6 @@ public class MockPaymentStrategy implements PaymentStrategy {
         );
     }
 
-    @Override
-    public SubscriptionResponseDTO upgradeSubscription(Subscription currentSubscription, SubscriptionPlan newPlan) {
-        return changeSubscriptionPlan(currentSubscription, newPlan);
-    }
-
-    @Override
-    public void cancelSubscription(String externalSubscriptionId) {
-        log.info("[MOCK PAYMENT] Cancelando suscripcion MOCK externa: {}", externalSubscriptionId);
-    }
 
     @Override
     public void processWebhook(Map<String, Object> payload) {

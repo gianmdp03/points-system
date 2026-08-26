@@ -15,4 +15,12 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     Optional<Subscription> findByUserId(@Param("userId") String userId);
 
     Optional<Subscription> findByExternalSubscriptionId(String externalSubscriptionId);
+
+    java.util.List<Subscription> findAllByUserIdOrderByIdDesc(String userId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM Subscription s WHERE s.status = :status AND s.createdAt < :threshold")
+    int deleteByStatusAndCreatedAtBefore(@Param("status") com.tech.point_system._enum.SubscriptionStatus status, @Param("threshold") java.time.OffsetDateTime threshold);
 }
+
+

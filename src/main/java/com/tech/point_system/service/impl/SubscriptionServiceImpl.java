@@ -7,18 +7,18 @@ import com.tech.point_system._enum.SubscriptionStatus;
 import com.tech.point_system.dto.subscription.SubscriptionDetailDTO;
 import com.tech.point_system.dto.subscription.SubscriptionRequestDTO;
 import com.tech.point_system.dto.subscription.SubscriptionResponseDTO;
+import com.tech.point_system.dto.subscription.SubscriptionUpgradeRequestDTO;
 import com.tech.point_system.exception.BadRequestException;
 import com.tech.point_system.exception.ConflictException;
 import com.tech.point_system.exception.NotFoundException;
-import com.tech.point_system.model.Company;
 import com.tech.point_system.model.Subscription;
 import com.tech.point_system.model.User;
-import com.tech.point_system.repository.CompanyRepository;
+import com.tech.point_system.payment.PaymentStrategy;
+import com.tech.point_system.payment.PaymentStrategyFactory;
 import com.tech.point_system.repository.SubscriptionRepository;
 import com.tech.point_system.repository.UserRepository;
 import com.tech.point_system.service.PlanValidatorService;
-import com.tech.point_system.payment.PaymentStrategy;
-import com.tech.point_system.payment.PaymentStrategyFactory;
+import com.tech.point_system.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 @Slf4j
@@ -37,55 +38,69 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
-    private final CompanyRepository companyRepository;
     private final PaymentStrategyFactory paymentStrategyFactory;
     private final PlanValidatorService planValidatorService;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SubscriptionResponseDTO subscribeCompanyAdmin(String userId, SubscriptionRequestDTO dto) {
+        log.info("[SUBSCRIPTION SERVICE] 🚀 [SUBSCRIBE/EXTEND] Solicitud de suscripción para usuario '{}' | Plan='{}' | Periodo='{}' | Provider='{}'",
+                userId, dto.plan(), dto.billingPeriod(), dto.provider());
+
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado con ID: " + userId));
 
-        Optional<Subscription> existingSubOpt = subscriptionRepository.findTopByUserIdOrderByIdDesc(userId);
-        if (existingSubOpt.isPresent() && existingSubOpt.get().getStatus() == SubscriptionStatus.ACTIVE) {
-            throw new BadRequestException("El usuario ya cuenta con una suscripción activa");
-        }
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        boolean hasActivePlan = user.getCurrentPlan() != null
+                && user.getCurrentPlan() != SubscriptionPlan.NONE
+                && user.getPlanExpirationDate() != null
+                && user.getPlanExpirationDate().isAfter(now);
 
-        Company company = null;
-        if (dto.companyId() != null) {
-            company = companyRepository.findById(dto.companyId())
-                    .orElseThrow(() -> new NotFoundException("Empresa no encontrada"));
+        if (hasActivePlan) {
+            SubscriptionPlan activePlan = user.getCurrentPlan();
+            if (activePlan != dto.plan()) {
+                int activeTier = SubscriptionPlan.getTierOf(activePlan);
+                int targetTier = SubscriptionPlan.getTierOf(dto.plan());
+
+                if (targetTier > activeTier) {
+                    log.warn("[SUBSCRIPTION SERVICE] ⚠️ Usuario '{}' tiene un plan activo '{}' diferente al solicitado '{}'. Debe usar upgrade.",
+                            userId, activePlan, dto.plan());
+                    throw new BadRequestException("Ya posees el plan " + activePlan + " activo. Para cambiar a otro plan utiliza la opción de Upgrade.");
+                } else {
+                    log.warn("[SUBSCRIPTION SERVICE] ⚠️ Usuario '{}' intentó downgrade a '{}' con plan '{}' vigente hasta {}",
+                            userId, dto.plan(), activePlan, user.getPlanExpirationDate());
+                    throw new ConflictException("No puedes cambiar a un plan inferior mientras tengas días de cobertura activos a favor. Debes esperar a que caduque tu periodo actual.");
+                }
+            }
+            log.info("[SUBSCRIPTION SERVICE] ➕ Usuario '{}' está extendiendo/recargando días para su plan actual '{}' (Vencimiento actual: {})",
+                    userId, activePlan, user.getPlanExpirationDate());
         }
 
         PaymentStrategy strategy = paymentStrategyFactory.getStrategy(dto.provider());
+        log.info("[SUBSCRIPTION SERVICE] 💳 Invocando estrategia de pago: {}", strategy.getClass().getSimpleName());
+
         SubscriptionResponseDTO gatewayResponse = strategy.createSubscription(user, dto);
 
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        OffsetDateTime nextBilling = dto.billingPeriod() == BillingPeriod.YEARLY
-                ? now.plusYears(1)
-                : now.plusMonths(1);
-
-        // Si ya existe un intento previo (ej: PENDING o CANCELLED), actualizamos la fila en lugar de duplicar
-        Subscription subscription = existingSubOpt.orElseGet(() -> Subscription.builder().user(user).build());
-        subscription.setCompany(company);
-        subscription.setPlan(dto.plan());
-        subscription.setBillingPeriod(dto.billingPeriod());
-        subscription.setStatus(SubscriptionStatus.PENDING);
-        subscription.setProvider(dto.provider());
-        subscription.setPrice(gatewayResponse.price());
-        subscription.setCurrency(gatewayResponse.currency());
-        subscription.setExternalSubscriptionId(gatewayResponse.externalSubscriptionId());
-        subscription.setStartDate(now);
-        subscription.setNextBillingDate(nextBilling);
-        subscription.setCancelledAt(null);
+        Subscription subscription = Subscription.builder()
+                .user(user)
+                .plan(dto.plan())
+                .billingPeriod(dto.billingPeriod())
+                .status(SubscriptionStatus.PENDING) // Zero-Trust: Siempre PENDING hasta recibir webhook de pago
+                .provider(dto.provider())
+                .price(gatewayResponse.price())
+                .currency(gatewayResponse.currency())
+                .externalSubscriptionId(gatewayResponse.externalSubscriptionId())
+                .startDate(now)
+                .build();
 
         subscription = subscriptionRepository.save(subscription);
+        log.info("[SUBSCRIPTION SERVICE] ✅ Orden de Suscripción PENDING registrada en DB: ID={} | Plan='{}' | ExternalRef='{}'",
+                subscription.getId(), subscription.getPlan(), subscription.getExternalSubscriptionId());
 
         return new SubscriptionResponseDTO(
                 subscription.getId(),
                 subscription.getPlan(),
-                subscription.getStatus(),
+                SubscriptionStatus.PENDING,
                 subscription.getProvider(),
                 subscription.getPrice(),
                 subscription.getCurrency(),
@@ -95,129 +110,168 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    @Transactional
-    public SubscriptionDetailDTO changeSubscriptionPlan(String userId, SubscriptionPlan newPlan) {
+    @Transactional(rollbackFor = Exception.class)
+    public SubscriptionResponseDTO upgradeSubscription(String userId, SubscriptionPlan newPlan) {
+        return upgradeSubscription(userId, new SubscriptionUpgradeRequestDTO(newPlan));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public SubscriptionResponseDTO upgradeSubscription(String userId, SubscriptionUpgradeRequestDTO dto) {
+        SubscriptionPlan newPlan = dto.newPlan();
+        log.info("[SUBSCRIPTION SERVICE] 🚀 [UPGRADE] Solicitud de upgrade para usuario '{}' hacia plan '{}'", userId, newPlan);
+
         if (newPlan == null || newPlan == SubscriptionPlan.NONE || newPlan == SubscriptionPlan.FREE_TRIAL) {
+            log.warn("[SUBSCRIPTION SERVICE] ⚠️ Plan inválido seleccionado para upgrade: '{}'", newPlan);
             throw new ConflictException("Debes seleccionar un plan comercial valido (BASIC, PRO o ENTERPRISE).");
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
 
-        Optional<Subscription> subOpt = subscriptionRepository.findByUserId(userId);
-        Subscription currentSubscription;
+        SubscriptionPlan effectiveCurrentPlan = (user.getCurrentPlan() != null && user.getCurrentPlan() != SubscriptionPlan.NONE)
+                ? user.getCurrentPlan()
+                : (Boolean.FALSE.equals(user.getIsFreeTrialOver()) ? SubscriptionPlan.FREE_TRIAL : SubscriptionPlan.NONE);
 
-        if (subOpt.isPresent()) {
-            currentSubscription = subOpt.get();
-            if (currentSubscription.getStatus() != SubscriptionStatus.ACTIVE) {
-                currentSubscription.setStatus(SubscriptionStatus.ACTIVE);
+        if (effectiveCurrentPlan == newPlan) {
+            log.warn("[SUBSCRIPTION SERVICE] ⚠️ El usuario ya cuenta con el plan '{}'", newPlan);
+            throw new ConflictException("Ya tienes contratado el plan " + newPlan);
+        }
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        int currentTier = SubscriptionPlan.getTierOf(effectiveCurrentPlan);
+        int targetTier = SubscriptionPlan.getTierOf(newPlan);
+
+        if (targetTier < currentTier) {
+            if (user.getPlanExpirationDate() != null && user.getPlanExpirationDate().isAfter(now)) {
+                log.warn("[SUBSCRIPTION SERVICE] ⛔ Downgrade bloqueado para usuario '{}'. Días activos hasta {}", userId, user.getPlanExpirationDate());
+                throw new ConflictException("No puedes realizar un downgrade de plan teniendo días de cobertura activos a favor. Debes esperar a que caduque tu periodo actual.");
             }
-            if (currentSubscription.getPlan() == newPlan) {
-                throw new ConflictException("Ya tienes contratado el plan " + newPlan);
-            }
-        } else {
-            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-            currentSubscription = Subscription.builder()
-                    .user(user)
-                    .plan(SubscriptionPlan.FREE_TRIAL)
-                    .billingPeriod(BillingPeriod.MONTHLY)
-                    .status(SubscriptionStatus.ACTIVE)
-                    .provider(PaymentProvider.MOCK)
-                    .price(BigDecimal.ZERO)
-                    .currency("ARS")
-                    .startDate(now)
-                    .nextBillingDate(now.plusMonths(1))
-                    .build();
         }
 
         // Validar que los recursos actuales no superen los limites del nuevo plan (Anti-Downgrade Loophole)
         planValidatorService.validatePlanChangeEligibility(userId, newPlan);
 
-        PaymentProvider provider = currentSubscription.getProvider() != null ? currentSubscription.getProvider() : PaymentProvider.MOCK;
+        Optional<Subscription> subOpt = subscriptionRepository.findTopByUserIdOrderByIdDesc(userId);
+        Subscription currentSubscription = subOpt.orElseGet(() -> Subscription.builder()
+                .user(user)
+                .plan(effectiveCurrentPlan)
+                .billingPeriod(BillingPeriod.MONTHLY)
+                .status(SubscriptionStatus.APPROVED)
+                .provider(PaymentProvider.MERCADO_PAGO)
+                .price(BigDecimal.ZERO)
+                .currency("ARS")
+                .startDate(now)
+                .build());
+
+        PaymentProvider provider = currentSubscription.getProvider() != null ? currentSubscription.getProvider() : PaymentProvider.MERCADO_PAGO;
         PaymentStrategy strategy = paymentStrategyFactory.getStrategy(provider);
-        SubscriptionResponseDTO changeResponse = strategy.changeSubscriptionPlan(currentSubscription, newPlan);
+        log.info("[SUBSCRIPTION SERVICE] 💳 Invocando upgrade en estrategia de pago '{}'...", strategy.getClass().getSimpleName());
 
-        currentSubscription.setPlan(newPlan);
-        currentSubscription.setPrice(changeResponse.price());
-        currentSubscription.setCurrency(changeResponse.currency());
-        currentSubscription.setStatus(SubscriptionStatus.ACTIVE);
-        if (changeResponse.externalSubscriptionId() != null) {
-            currentSubscription.setExternalSubscriptionId(changeResponse.externalSubscriptionId());
-        }
+        // Zero-Trust: Generar preferencia de pago. NO mutar el plan ni activar la suscripción en DB hasta confirmación del webhook.
+        SubscriptionResponseDTO changeResponse = strategy.upgradeSubscription(currentSubscription, newPlan, dto);
 
-        user.setIsFreeTrialOver(true);
-        userRepository.save(user);
+        log.info("[SUBSCRIPTION SERVICE] 🔗 Preferencia de Upgrade generada con éxito para usuario '{}' -> CheckoutUrl='{}' | ExternalRef='{}'",
+                user.getEmail(), changeResponse.checkoutUrl(), changeResponse.externalSubscriptionId());
 
-        currentSubscription = subscriptionRepository.save(currentSubscription);
-
-        log.info("[SUBSCRIPTION PLAN CHANGE] Usuario {} cambio exitosamente a plan {}", user.getEmail(), newPlan);
-
-        return new SubscriptionDetailDTO(
+        return new SubscriptionResponseDTO(
                 currentSubscription.getId(),
-                user.getId(),
-                currentSubscription.getPlan(),
-                currentSubscription.getBillingPeriod(),
-                currentSubscription.getStatus(),
-                currentSubscription.getProvider(),
-                currentSubscription.getPrice(),
-                currentSubscription.getCurrency(),
-                currentSubscription.getExternalSubscriptionId(),
-                currentSubscription.getStartDate(),
-                currentSubscription.getNextBillingDate(),
-                currentSubscription.getCancelledAt()
+                newPlan,
+                SubscriptionStatus.PENDING,
+                provider,
+                changeResponse.price(),
+                changeResponse.currency(),
+                changeResponse.checkoutUrl(),
+                changeResponse.externalSubscriptionId()
         );
-    }
-
-    @Override
-    @Transactional
-    public SubscriptionDetailDTO upgradeSubscription(String userId, SubscriptionPlan newPlan) {
-        return changeSubscriptionPlan(userId, newPlan);
     }
 
     @Override
     @Transactional(readOnly = true)
     public SubscriptionDetailDTO getMySubscription(String userId) {
-        Optional<Subscription> subOpt = subscriptionRepository.findTopByUserIdOrderByIdDesc(userId);
-        if (subOpt.isPresent()) {
-            Subscription subscription = subOpt.get();
-            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-            boolean isEffective = subscription.getStatus() == SubscriptionStatus.ACTIVE
-                    || subscription.getStatus() == SubscriptionStatus.PENDING
-                    || (subscription.getStatus() == SubscriptionStatus.CANCELLED
-                        && subscription.getNextBillingDate() != null
-                        && subscription.getNextBillingDate().isAfter(now));
-
-            if (isEffective) {
-                return mapToDetailDTO(subscription);
-            }
-        }
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        Optional<Subscription> subOpt = subscriptionRepository.findTopByUserIdOrderByIdDesc(userId);
+        Subscription latestSub = subOpt.orElse(null);
+
+        boolean hasCommercialPlan = user.getCurrentPlan() != null
+                && user.getCurrentPlan() != SubscriptionPlan.NONE
+                && user.getCurrentPlan() != SubscriptionPlan.FREE_TRIAL
+                && user.getPlanExpirationDate() != null
+                && user.getPlanExpirationDate().isAfter(now);
+
+        if (hasCommercialPlan) {
+            long daysRemaining = calculateDaysRemaining(now, user.getPlanExpirationDate());
+            log.info("[SUBSCRIPTION SERVICE] 🔍 Devolviendo plan activo '{}' para usuario '{}' (Vence: {}, Días={})",
+                    user.getCurrentPlan(), userId, user.getPlanExpirationDate(), daysRemaining);
+
+            return new SubscriptionDetailDTO(
+                    latestSub != null ? latestSub.getId() : null,
+                    userId,
+                    user.getCurrentPlan(),
+                    latestSub != null ? latestSub.getBillingPeriod() : BillingPeriod.MONTHLY,
+                    SubscriptionStatus.APPROVED,
+                    latestSub != null ? latestSub.getProvider() : PaymentProvider.MERCADO_PAGO,
+                    latestSub != null ? latestSub.getPrice() : BigDecimal.ZERO,
+                    latestSub != null ? latestSub.getCurrency() : "ARS",
+                    latestSub != null ? latestSub.getExternalSubscriptionId() : null,
+                    latestSub != null ? latestSub.getStartDate() : now,
+                    user.getPlanExpirationDate(),
+                    daysRemaining
+            );
+        }
 
         if (Boolean.FALSE.equals(user.getIsFreeTrialOver())) {
             OffsetDateTime start = user.getFreeTrialStartTime() != null
                     ? user.getFreeTrialStartTime().atStartOfDay().atOffset(ZoneOffset.UTC)
-                    : OffsetDateTime.now(ZoneOffset.UTC);
-            OffsetDateTime end = user.getFreeTrialEndTime() != null
+                    : now;
+            OffsetDateTime end = user.getPlanExpirationDate() != null
+                    ? user.getPlanExpirationDate()
+                    : (user.getFreeTrialEndTime() != null
                     ? user.getFreeTrialEndTime().atStartOfDay().atOffset(ZoneOffset.UTC)
-                    : start.plusDays(30);
+                    : start.plusDays(30));
+
+            long daysRemaining = calculateDaysRemaining(now, end);
+
+            log.info("[SUBSCRIPTION SERVICE] 🔍 Devolviendo estado de FREE_TRIAL activo para usuario '{}' (Vence: {}, Días={})", userId, end, daysRemaining);
 
             return new SubscriptionDetailDTO(
-                    null,
+                    latestSub != null ? latestSub.getId() : null,
                     userId,
                     SubscriptionPlan.FREE_TRIAL,
                     BillingPeriod.MONTHLY,
-                    SubscriptionStatus.ACTIVE,
+                    SubscriptionStatus.APPROVED,
                     PaymentProvider.MOCK,
                     BigDecimal.ZERO,
                     "ARS",
                     "FREE-TRIAL-" + userId,
                     start,
                     end,
-                    null
+                    daysRemaining
             );
         }
+
+        // Si hay una orden PENDING en curso, reportarla con status PENDING
+        if (latestSub != null && latestSub.getStatus() == SubscriptionStatus.PENDING) {
+            return new SubscriptionDetailDTO(
+                    latestSub.getId(),
+                    userId,
+                    latestSub.getPlan(),
+                    latestSub.getBillingPeriod(),
+                    SubscriptionStatus.PENDING,
+                    latestSub.getProvider(),
+                    latestSub.getPrice(),
+                    latestSub.getCurrency(),
+                    latestSub.getExternalSubscriptionId(),
+                    latestSub.getStartDate(),
+                    user.getPlanExpirationDate(),
+                    0L
+            );
+        }
+
+        log.info("[SUBSCRIPTION SERVICE] 🔍 Usuario '{}' no posee suscripción activa ni periodo de prueba. Devolviendo plan NONE.", userId);
 
         return new SubscriptionDetailDTO(
                 null,
@@ -231,37 +285,20 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 null,
                 null,
                 null,
-                null
+                0L
         );
     }
 
-    private SubscriptionDetailDTO mapToDetailDTO(Subscription subscription) {
-        return new SubscriptionDetailDTO(
-                subscription.getId(),
-                subscription.getUser().getId(),
-                subscription.getPlan(),
-                subscription.getBillingPeriod(),
-                subscription.getStatus(),
-                subscription.getProvider(),
-                subscription.getPrice(),
-                subscription.getCurrency(),
-                subscription.getExternalSubscriptionId(),
-                subscription.getStartDate(),
-                subscription.getNextBillingDate(),
-                subscription.getCancelledAt()
-        );
-    }
-
-    @Override
-    @Transactional
-    public void cancelSubscription(String userId) {
-        Subscription subscription = subscriptionRepository.findByUserId(userId)
-                .orElseThrow(() -> new NotFoundException("No se encontro suscripcion para cancelar."));
-
-        PaymentStrategy strategy = paymentStrategyFactory.getStrategy(subscription.getProvider());
-        strategy.cancelSubscription(subscription.getExternalSubscriptionId());
-        subscription.setStatus(SubscriptionStatus.CANCELLED);
-        subscription.setCancelledAt(OffsetDateTime.now(ZoneOffset.UTC));
-        subscriptionRepository.save(subscription);
+    public static long calculateDaysRemaining(OffsetDateTime now, OffsetDateTime expirationDate) {
+        if (expirationDate == null || !expirationDate.isAfter(now)) {
+            return 0L;
+        }
+        long secondsRemaining = java.time.Duration.between(now, expirationDate).toSeconds();
+        if (secondsRemaining <= 0) {
+            return 0L;
+        }
+        return (secondsRemaining + 86399L) / 86400L;
     }
 }
+
+

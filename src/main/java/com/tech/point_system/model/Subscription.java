@@ -20,7 +20,9 @@ import java.time.ZoneOffset;
 @Table(
         name = "subscriptions",
         indexes = {
-                @Index(name = "idx_subscription_external_id", columnList = "external_subscription_id")
+                @Index(name = "idx_subscription_external_id", columnList = "external_subscription_id"),
+                @Index(name = "idx_subscription_user_id", columnList = "user_id"),
+                @Index(name = "idx_subscription_status_created", columnList = "status, created_at")
         }
 )
 public class Subscription {
@@ -31,11 +33,7 @@ public class Subscription {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // El COMPANY_ADMIN titular de la suscripción
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id")
-    private Company company; // Opcional: si la suscripción se asigna a una empresa específica
+    private User user; // El COMPANY_ADMIN titular de la orden de suscripción
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -54,7 +52,7 @@ public class Subscription {
     private PaymentProvider provider;
 
     @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal price; // Congela la tarifa pagada
+    private BigDecimal price; // Tarifa pagada por el periodo
 
     @Column(nullable = false, length = 10)
     private String currency; // "ARS", "USD", etc.
@@ -64,10 +62,6 @@ public class Subscription {
 
     @Column(nullable = false)
     private OffsetDateTime startDate;
-
-    private OffsetDateTime nextBillingDate;
-
-    private OffsetDateTime cancelledAt;
 
     @Builder.Default
     @Column(nullable = false, updatable = false)
@@ -92,3 +86,4 @@ public class Subscription {
         return getClass().hashCode();
     }
 }
+

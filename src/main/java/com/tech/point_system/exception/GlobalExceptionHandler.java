@@ -1,19 +1,21 @@
 package com.tech.point_system.exception;
 
 import java.nio.file.AccessDeniedException;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Map<String, String>> handleValidationExceptions(
       MethodArgumentNotValidException ex) {
@@ -87,13 +89,16 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(PaymentGatewayException.class)
-  public ResponseEntity<ErrorResponse> handlePaymentGatewayException(PaymentGatewayException ex) {
-    ErrorResponse error = new ErrorResponse(
-        HttpStatus.BAD_GATEWAY.value(),
-        "Payment Gateway Error",
-        ex.getMessage()
+  public ResponseEntity<PaymentErrorResponse> handlePaymentGatewayException(PaymentGatewayException ex) {
+    int httpCode = ex.getHttpStatus() > 0 ? ex.getHttpStatus() : 400;
+    PaymentErrorResponse error = new PaymentErrorResponse(
+        httpCode,
+        "PAYMENT_REJECTED",
+        ex.getStatus(),
+        ex.getStatusDetail(),
+        ex.getMessage(),
+        OffsetDateTime.now(ZoneOffset.UTC)
     );
-    return new ResponseEntity<>(error, HttpStatus.BAD_GATEWAY);
+    return ResponseEntity.status(httpCode).body(error);
   }
 }
-
