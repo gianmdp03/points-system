@@ -37,7 +37,7 @@ public class SupabaseJwtConverter implements Converter<Jwt, AbstractAuthenticati
         String roleName = "ROLE_" + user.getRole().name();
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(roleName));
 
-        log.info("Usuario autenticado exitosamente con rol: {}", roleName);
+        log.debug("Usuario autenticado exitosamente con rol: {}", roleName);
 
         return new JwtAuthenticationToken(jwt, authorities);
     }

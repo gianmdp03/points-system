@@ -79,6 +79,14 @@ public class PointsAccountServiceImpl implements PointsAccountService {
   }
 
   @Override
+  public Page<PointsAccountDetailDTO> listInactiveClients(String companyAdminId, Long companyId, int days, Pageable pageable) {
+    companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+    int safeDays = Math.max(1, days);
+    OffsetDateTime thresholdDate = OffsetDateTime.now(ZoneOffset.UTC).minusDays(safeDays);
+    return pointsAccountRepository.findInactiveAccounts(companyId, thresholdDate, pageable).map(pointsAccountMapper::toDetailDTO);
+  }
+
+  @Override
   public Page<PointsTransactionDetailDTO> getTransactionHistory(Long clientId, Long companyId, Pageable pageable) {
     PointsAccount pointsAccount = pointsAccountRepository.findByClientIdAndCompanyId(clientId, companyId)
             .orElseThrow(() -> new NotFoundException("Points account not found for client " + clientId + " in company " + companyId));

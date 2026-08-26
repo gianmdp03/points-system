@@ -31,6 +31,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final UserRepository userRepository;
     private final CompanyAccessValidator accessValidator;
     private final PlanValidatorService planValidatorService;
+    private final com.tech.point_system.service.MessageTemplateService messageTemplateService;
 
     @Override
     @Transactional
@@ -41,6 +42,7 @@ public class CompanyServiceImpl implements CompanyService {
         User user = userRepository.findById(companyAdminId).orElseThrow(()-> new NotFoundException("Company Admin Not Found"));
         company.setAdmin(user);
         company = repository.save(company);
+        messageTemplateService.seedDefaultTemplates(company);
         return mapper.toDetailDTO(company);
     }
 

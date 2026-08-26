@@ -6,6 +6,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -20,4 +23,11 @@ public interface PointsAccountRepository extends JpaRepository<PointsAccount, Lo
     long countByCompanyId(Long companyId);
 
     List<PointsAccount> findByCompanyIdAndLastActivityDateBefore(Long companyId, OffsetDateTime thresholdDate);
+
+    @EntityGraph(attributePaths = {"client", "company"})
+    @Query("SELECT pa FROM PointsAccount pa WHERE pa.company.id = :companyId AND (pa.lastActivityDate IS NULL OR pa.lastActivityDate <= :thresholdDate)")
+    Page<PointsAccount> findInactiveAccounts(
+            @Param("companyId") Long companyId,
+            @Param("thresholdDate") OffsetDateTime thresholdDate,
+            Pageable pageable);
 }

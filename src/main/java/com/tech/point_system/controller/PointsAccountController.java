@@ -38,6 +38,17 @@ public class PointsAccountController {
   }
 
   @PreAuthorize("hasRole('COMPANY_ADMIN')")
+  @GetMapping("/{companyId}/inactive")
+  public ResponseEntity<Page<PointsAccountDetailDTO>> listInactiveClients(
+          @AuthenticationPrincipal Jwt jwt,
+          @PathVariable Long companyId,
+          @RequestParam(name = "days", defaultValue = "30") Integer days,
+          @PageableDefault(size = 10, sort = "lastActivityDate", direction = Sort.Direction.ASC) Pageable pageable) {
+    return ResponseEntity.status(HttpStatus.OK)
+            .body(pointsAccountService.listInactiveClients(jwt.getSubject(), companyId, days, pageable));
+  }
+
+  @PreAuthorize("hasRole('COMPANY_ADMIN')")
   @GetMapping("/history/{clientId}/{companyId}")
   public ResponseEntity<Page<PointsTransactionDetailDTO>> getTransactionHistory(@PathVariable Long clientId, @PathVariable Long companyId, @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
     return ResponseEntity.status(HttpStatus.OK).body(pointsAccountService.getTransactionHistory(clientId, companyId, pageable));

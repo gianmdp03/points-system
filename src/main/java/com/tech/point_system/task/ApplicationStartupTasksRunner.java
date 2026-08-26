@@ -17,6 +17,7 @@ public class ApplicationStartupTasksRunner {
     private final PointsExpirationTasks pointsExpirationTasks;
     private final InactiveClientPurgeTasks inactiveClientPurgeTasks;
     private final SubscriptionExpirationTasks subscriptionExpirationTasks;
+    private final com.tech.point_system.service.MessageTemplateService messageTemplateService;
 
     /**
      * Se ejecuta automáticamente y de forma asíncrona una vez que la aplicación arranca (ApplicationReadyEvent).
@@ -64,6 +65,13 @@ public class ApplicationStartupTasksRunner {
             subscriptionExpirationTasks.purgeAbandonedPendingSubscriptions();
         } catch (Exception e) {
             log.error("[STARTUP ERROR] Falló la verificación de suscripciones expiradas al iniciar:", e);
+        }
+
+        try {
+            log.info("[STARTUP] 6/6 Verificando siembra de plantillas de mensajes por defecto...");
+            messageTemplateService.seedDefaultTemplatesForAllCompaniesWithoutTemplates();
+        } catch (Exception e) {
+            log.error("[STARTUP ERROR] Falló la siembra de plantillas de mensajes al iniciar:", e);
         }
 
         log.info("==================================================================");
