@@ -34,6 +34,8 @@ public class MpPreferenceModels {
             String id,
             String title,
             String description,
+            @JsonProperty("category_id")
+            String categoryId,
             int quantity,
             @JsonProperty("unit_price")
             BigDecimal unitPrice,
@@ -43,10 +45,18 @@ public class MpPreferenceModels {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
+    public record MpPreferenceIdentification(
+            String type,
+            String number
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record MpPreferencePayer(
             String name,
             String surname,
-            String email
+            String email,
+            MpPreferenceIdentification identification
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

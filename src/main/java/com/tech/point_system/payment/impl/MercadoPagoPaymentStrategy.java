@@ -79,6 +79,10 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
         // auto_return solo es válido en Mercado Pago con dominios públicos HTTPS reales (rechaza http:// y localhost)
         String autoReturn = (StringUtils.hasText(backUrl) && backUrl.startsWith("https://") && !backUrl.contains("localhost")) ? "approved" : null;
 
+        MpPreferenceIdentification identification = (user != null && StringUtils.hasText(user.getDni()))
+                ? new MpPreferenceIdentification("DNI", user.getDni())
+                : null;
+
         // NOTA: Se pasa notificationUrl = null para evitar que Mercado Pago active el despachador de IPN legado
         // y delegar el 100% de los eventos al sistema moderno de Webhooks v2 configurado en el Dashboard de la aplicación.
         MpPreferenceRequest preferenceRequest = new MpPreferenceRequest(
@@ -86,6 +90,7 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
                         "plan-" + dto.plan().name().toLowerCase(),
                         "Suscripción Pointly - " + planConfig.name(),
                         planConfig.tagline(),
+                        "services",
                         1,
                         planPrice,
                         currency
@@ -93,7 +98,8 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
                 new MpPreferencePayer(
                         userName,
                         "Pointly",
-                        payerEmail
+                        payerEmail,
+                        identification
                 ),
                 new MpPreferenceBackUrls(
                         backUrl + "?status=approved",
@@ -167,12 +173,17 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
         // auto_return solo es válido en Mercado Pago con dominios públicos HTTPS reales (rechaza http:// y localhost)
         String autoReturn = (StringUtils.hasText(backUrl) && backUrl.startsWith("https://") && !backUrl.contains("localhost")) ? "approved" : null;
 
+        MpPreferenceIdentification identification = (user != null && StringUtils.hasText(user.getDni()))
+                ? new MpPreferenceIdentification("DNI", user.getDni())
+                : null;
+
         // Omitir notificationUrl para delegar 100% a Webhooks v2 del Dashboard
         MpPreferenceRequest preferenceRequest = new MpPreferenceRequest(
                 List.of(new MpPreferenceItem(
                         "upgrade-" + newPlan.name().toLowerCase(),
                         "Upgrade a Plan " + newPlanConfig.name() + " (Días restantes)",
                         "Cobro diferencial por upgrade prorrateado",
+                        "services",
                         1,
                         upgradeAmount,
                         currency
@@ -180,7 +191,8 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
                 new MpPreferencePayer(
                         userName,
                         "Pointly",
-                        properties.isSandbox() ? "test_user_buyer@testuser.com" : userEmail
+                        properties.isSandbox() ? "test_user_buyer@testuser.com" : userEmail,
+                        identification
                 ),
                 new MpPreferenceBackUrls(
                         backUrl + "?status=approved",

@@ -69,6 +69,7 @@ class MercadoPagoPaymentStrategyTest {
                 .id("usr-100")
                 .email("store@mercadopago.com")
                 .name("Test User")
+                .dni("12345678")
                 .build();
         user.setIsFreeTrialOver(false);
     }
@@ -87,8 +88,6 @@ class MercadoPagoPaymentStrategyTest {
                 null
         );
 
-
-
         PlanConfigDTO planConfig = new PlanConfigDTO(
                 SubscriptionPlan.PRO, "Plan Pro", "Desc",
                 new BigDecimal("19990.00"), new BigDecimal("53990.00"), new BigDecimal("99990.00"), new BigDecimal("199990.00"),
@@ -101,7 +100,6 @@ class MercadoPagoPaymentStrategyTest {
         when(planConfigService.getPlanConfig(SubscriptionPlan.PRO)).thenReturn(planConfig);
         when(properties.getBackUrl()).thenReturn("http://localhost:4200/subscription/callback");
         when(properties.isSandbox()).thenReturn(true);
-
 
         MpPreferenceResponse mockPref = new MpPreferenceResponse(
                 "PREF-12345",
@@ -119,6 +117,14 @@ class MercadoPagoPaymentStrategyTest {
         assertEquals(SubscriptionStatus.PENDING, response.status());
         assertEquals("https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=PREF-12345", response.checkoutUrl());
         assertTrue(response.externalSubscriptionId().startsWith("SUB:usr-100:PRO:MONTHLY:"));
+
+        ArgumentCaptor<MpPreferenceRequest> reqCaptor = ArgumentCaptor.forClass(MpPreferenceRequest.class);
+        verify(preferenceClient).createPreference(reqCaptor.capture());
+        MpPreferenceRequest captured = reqCaptor.getValue();
+        assertEquals("services", captured.items().getFirst().categoryId());
+        assertNotNull(captured.payer().identification());
+        assertEquals("DNI", captured.payer().identification().type());
+        assertEquals("12345678", captured.payer().identification().number());
     }
 
     @Test
