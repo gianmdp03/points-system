@@ -11,5 +11,6 @@ public record PointsAccountRequestDTO(
         @NotBlank @Size(max = 50) String country,
         @NotBlank String name,
         @Email String email,
-        String phone
+        String phone,
+        Boolean isNotificationEnabled
 ) {}

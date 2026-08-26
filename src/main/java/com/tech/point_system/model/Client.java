@@ -35,6 +35,9 @@ public class Client {
     @Column(length = 50)
     private String phone;
 
+    @Column(nullable = false)
+    private Boolean isNotificationEnabled = true;
+
     @Column(nullable = false, updatable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
 

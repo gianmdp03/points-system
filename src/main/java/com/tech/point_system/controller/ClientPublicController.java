@@ -1,6 +1,7 @@
 package com.tech.point_system.controller;
 
 import com.tech.point_system.dto.client.ClientJoinRequestDTO;
+import com.tech.point_system.dto.client.ClientNotificationToggleDTO;
 import com.tech.point_system.dto.company.CompanyListDTO;
 import com.tech.point_system.dto.company.CompanyPublicDetailDTO;
 import com.tech.point_system.dto.pointsAccount.PointsAccountDetailDTO;
@@ -61,7 +62,7 @@ public class ClientPublicController {
         planValidatorService.validateClientCreation(company.getAdmin().getId(), (int) currentClients);
 
         Client client = clientRepository.getOrCreateClient(
-                dto.dni(), dto.country(), dto.name(), dto.email(), dto.phone());
+                dto.dni(), dto.country(), dto.name(), dto.email(), dto.phone(), dto.isNotificationEnabled());
 
         pointsAccountRepository.findByClientIdAndCompanyId(client.getId(), company.getId())
                 .ifPresent(existingAccount -> {
@@ -123,6 +124,7 @@ public class ClientPublicController {
                 company.getIsEnabled(),
                 pointsAccount.getBalance(),
                 client.getName(),
+                client.getIsNotificationEnabled(),
                 company.getIsPointsExpirationEnabled(),
                 company.getPointsExpirationDays(),
                 company.getIsInactiveClientPurgeEnabled(),
@@ -133,5 +135,21 @@ public class ClientPublicController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{country}/{dni}/notifications")
+    @Transactional
+    public ResponseEntity<Void> updateClientNotificationPreference(
+            @PathVariable String country,
+            @PathVariable String dni,
+            @Valid @RequestBody ClientNotificationToggleDTO dto) {
+
+        Client client = clientRepository.findByDniAndCountry(dni, country)
+                .orElseThrow(() -> new NotFoundException("No se encontró ningún cliente registrado con el DNI y País especificados."));
+
+        client.setIsNotificationEnabled(Boolean.TRUE.equals(dto.isNotificationEnabled()));
+        clientRepository.save(client);
+
+        return ResponseEntity.noContent().build();
     }
 }

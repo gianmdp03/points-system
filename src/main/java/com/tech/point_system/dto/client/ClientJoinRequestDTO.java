@@ -23,5 +23,7 @@ public record ClientJoinRequestDTO(
         @Email(message = "El formato de correo no es válido")
         String email,
 
-        String phone
+        String phone,
+
+        Boolean isNotificationEnabled
 ) {}

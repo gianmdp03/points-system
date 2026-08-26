@@ -17,6 +17,7 @@ public record CompanyPublicDetailDTO(
         Boolean isEnabled,
         Integer clientBalance,
         String clientName,
+        Boolean isNotificationEnabled,
         Boolean isPointsExpirationEnabled,
         Integer pointsExpirationDays,
         Boolean isInactiveClientPurgeEnabled,

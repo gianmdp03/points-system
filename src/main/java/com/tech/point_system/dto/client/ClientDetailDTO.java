@@ -6,5 +6,6 @@ public record ClientDetailDTO(
         String country,
         String name,
         String email,
-        String phone
+        String phone,
+        Boolean isNotificationEnabled
 ) {}

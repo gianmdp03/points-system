@@ -54,7 +54,7 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     planValidatorService.validateClientCreation(companyAdminId, (int) currentClients);
 
     Client client = clientRepository.getOrCreateClient(
-            dto.dni(), dto.country(), dto.name(), dto.email(), dto.phone());
+            dto.dni(), dto.country(), dto.name(), dto.email(), dto.phone(), dto.isNotificationEnabled());
 
     pointsAccountRepository.findByClientIdAndCompanyId(client.getId(), company.getId())
             .ifPresent(existingAccount -> {
