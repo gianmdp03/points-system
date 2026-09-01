@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
 @Service
@@ -77,6 +79,20 @@ public class MessageTemplateServiceImpl implements MessageTemplateService {
     }
 
     @Override
+    @Transactional
+    public List<MessageTemplateDetailDTO> getAllTemplatesByCompany(String companyAdminId, Long companyId) {
+        Company company = companyAccessValidator.validateAccess(companyId, companyAdminId);
+
+        long count = messageTemplateRepository.countByCompanyId(companyId);
+        if (count == 0) {
+            seedDefaultTemplates(company);
+        }
+
+        List<MessageTemplate> templates = messageTemplateRepository.findAllByCompanyId(companyId);
+        return templates.stream().map(messageTemplateMapper::toDetailDTO).toList();
+    }
+
+    @Override
     public MessageTemplateDetailDTO getTemplateById(String companyAdminId, Long companyId, Long id) {
         companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
 
@@ -96,6 +112,37 @@ public class MessageTemplateServiceImpl implements MessageTemplateService {
 
         template.setIsEnabled(!Boolean.TRUE.equals(template.getIsEnabled()));
         messageTemplateRepository.save(template);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTemplate(String companyAdminId, Long companyId, Long id) {
+        companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+
+        MessageTemplate template = messageTemplateRepository.findByIdAndCompanyId(id, companyId)
+                .orElseThrow(() -> new NotFoundException("Plantilla de mensaje no encontrada"));
+
+        messageTemplateRepository.delete(template);
+    }
+
+    @Override
+    public Optional<MessageTemplate> getRandomActiveTemplate(Long companyId, NotificationType type) {
+        List<MessageTemplate> activeTemplates = messageTemplateRepository.findByCompanyIdAndTypeAndIsEnabledTrue(companyId, type);
+        if (activeTemplates.isEmpty()) {
+            return Optional.empty();
+        }
+        int index = ThreadLocalRandom.current().nextInt(activeTemplates.size());
+        return Optional.of(activeTemplates.get(index));
+    }
+
+    @Override
+    public MessageTemplateDetailDTO getRandomActiveTemplatePreview(String companyAdminId, Long companyId, NotificationType type) {
+        companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+
+        MessageTemplate template = getRandomActiveTemplate(companyId, type)
+                .orElseThrow(() -> new NotFoundException("No hay plantillas activas para el tipo de notificación especificado"));
+
+        return messageTemplateMapper.toDetailDTO(template);
     }
 
     @Override

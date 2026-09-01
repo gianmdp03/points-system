@@ -24,6 +24,7 @@ import java.util.Set;
                 @Index(name = "idx_company_user_id", columnList = "user_id"),
                 @Index(name = "idx_company_enabled_disabled", columnList = "isEnabled, disabledDate"),
                 @Index(name = "idx_company_purge_status", columnList = "isInactiveClientPurgeEnabled, inactiveClientPurgeDays"),
+                @Index(name = "idx_company_retention_status", columnList = "isClientRetentionEnabled, clientRetentionDays"),
                 @Index(name = "idx_company_name", columnList = "name")
         }
 )
@@ -62,6 +63,11 @@ public class Company {
     private Boolean isInactiveClientPurgeEnabled = false;
 
     private Integer inactiveClientPurgeDays;
+
+    @Column(nullable = false)
+    private Boolean isClientRetentionEnabled = false;
+
+    private Integer clientRetentionDays;
 
     @Enumerated(EnumType.STRING)
     private AppAdminOwner appAdminOwner;

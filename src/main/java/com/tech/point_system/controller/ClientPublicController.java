@@ -32,8 +32,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
+import com.tech.point_system._enum.NotificationType;
+import com.tech.point_system.service.EmailService;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public/clients")
@@ -47,6 +50,7 @@ public class ClientPublicController {
     private final PointsAccountMapper pointsAccountMapper;
     private final PublicCatalogService publicCatalogService;
     private final PlanValidatorService planValidatorService;
+    private final EmailService emailService;
 
     @PostMapping("/join")
     @Transactional
@@ -76,6 +80,16 @@ public class ClientPublicController {
         newAccount.setLastActivityDate(OffsetDateTime.now(ZoneOffset.UTC));
 
         PointsAccount savedAccount = pointsAccountRepository.save(newAccount);
+
+        if (Boolean.TRUE.equals(client.getIsNotificationEnabled()) && client.getEmail() != null && !client.getEmail().isBlank()) {
+            emailService.sendNotificationEmail(
+                    NotificationType.WELCOME_NOTIFICATION,
+                    company,
+                    client,
+                    Map.of("localName", company.getName())
+            );
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(pointsAccountMapper.toDetailDTO(savedAccount));
     }
 
@@ -129,6 +143,8 @@ public class ClientPublicController {
                 company.getPointsExpirationDays(),
                 company.getIsInactiveClientPurgeEnabled(),
                 company.getInactiveClientPurgeDays(),
+                company.getIsClientRetentionEnabled(),
+                company.getClientRetentionDays(),
                 productDTOs,
                 promotionDTOs,
                 rewardDTOs

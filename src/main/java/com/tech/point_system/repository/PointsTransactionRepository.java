@@ -27,4 +27,19 @@ public interface PointsTransactionRepository extends JpaRepository<PointsTransac
            "AND pt.expiresAt < :now " +
            "AND pt.availableAmount > 0")
     List<PointsTransaction> findExpiredTransactions(@Param("now") OffsetDateTime now);
+
+    @Query("SELECT pt FROM PointsTransaction pt " +
+           "JOIN FETCH pt.pointsAccount pa " +
+           "JOIN FETCH pa.client c " +
+           "JOIN FETCH pa.company comp " +
+           "WHERE pt.transactionType = com.tech.point_system._enum.TransactionType.EARNED " +
+           "AND pt.availableAmount > 0 " +
+           "AND pt.expiresAt IS NOT NULL " +
+           "AND pt.expiresAt >= :startDate AND pt.expiresAt < :endDate " +
+           "AND comp.isPointsExpirationEnabled = true " +
+           "AND c.isNotificationEnabled = true " +
+           "AND c.email IS NOT NULL AND TRIM(c.email) != ''")
+    List<PointsTransaction> findTransactionsExpiringBetween(
+            @Param("startDate") OffsetDateTime startDate,
+            @Param("endDate") OffsetDateTime endDate);
 }

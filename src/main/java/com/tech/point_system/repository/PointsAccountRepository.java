@@ -30,4 +30,22 @@ public interface PointsAccountRepository extends JpaRepository<PointsAccount, Lo
             @Param("companyId") Long companyId,
             @Param("thresholdDate") OffsetDateTime thresholdDate,
             Pageable pageable);
+
+    @EntityGraph(attributePaths = {"client", "company"})
+    @Query("SELECT pa FROM PointsAccount pa " +
+           "WHERE pa.company.id = :companyId " +
+           "AND pa.client.isNotificationEnabled = true " +
+           "AND pa.client.email IS NOT NULL AND TRIM(pa.client.email) != '' " +
+           "AND (pa.lastActivityDate IS NOT NULL AND pa.lastActivityDate <= :thresholdDate) " +
+           "AND (pa.lastRetentionNotificationDate IS NULL OR pa.lastRetentionNotificationDate <= :thresholdDate)")
+    List<PointsAccount> findEligibleForRetentionNotification(
+            @Param("companyId") Long companyId,
+            @Param("thresholdDate") OffsetDateTime thresholdDate);
+
+    @EntityGraph(attributePaths = {"client", "company"})
+    @Query("SELECT pa FROM PointsAccount pa " +
+           "WHERE pa.company.id = :companyId " +
+           "AND pa.client.isNotificationEnabled = true " +
+           "AND pa.client.email IS NOT NULL AND TRIM(pa.client.email) != ''")
+    List<PointsAccount> findClientsForPromotionBroadcast(@Param("companyId") Long companyId);
 }

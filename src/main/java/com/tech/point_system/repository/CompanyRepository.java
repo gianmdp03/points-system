@@ -16,6 +16,7 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     Page<Company> findByAdminId(String adminId, Pageable pageable);
     Page<Company> findByPointsAccountsClientId(Long clientId, Pageable pageable);
     List<Company> findByIsInactiveClientPurgeEnabledTrueAndInactiveClientPurgeDaysIsNotNull();
+    List<Company> findByIsClientRetentionEnabledTrueAndClientRetentionDaysIsNotNull();
     long countByAdminId(String adminId);
     Optional<Company> findByNameIgnoreCase(String name);
 

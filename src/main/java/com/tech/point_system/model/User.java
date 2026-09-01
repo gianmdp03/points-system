@@ -5,6 +5,7 @@ import com.tech.point_system._enum.SubscriptionPlan;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -56,8 +57,14 @@ public class User {
     @Column(name = "plan_expiration_date")
     private OffsetDateTime planExpirationDate;
 
+    @Column(nullable = false)
+    private Boolean isSuspendedForChargeback = false;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal pendingDebtArs = BigDecimal.ZERO;
+
     @Builder
-    public User(String id, String email, String name, String dni, Role role, SubscriptionPlan currentPlan, OffsetDateTime planExpirationDate) {
+    public User(String id, String email, String name, String dni, Role role, SubscriptionPlan currentPlan, OffsetDateTime planExpirationDate, Boolean isSuspendedForChargeback, BigDecimal pendingDebtArs) {
         this.id = id;
         this.email = email;
         this.name = name;
@@ -65,6 +72,8 @@ public class User {
         this.role = role;
         this.currentPlan = currentPlan != null ? currentPlan : SubscriptionPlan.NONE;
         this.planExpirationDate = planExpirationDate;
+        this.isSuspendedForChargeback = isSuspendedForChargeback != null ? isSuspendedForChargeback : false;
+        this.pendingDebtArs = pendingDebtArs != null ? pendingDebtArs : BigDecimal.ZERO;
     }
 
     @Override

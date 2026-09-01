@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -31,6 +32,11 @@ public class PlanValidatorService {
     public SubscriptionPlan getActivePlan(String companyAdminId) {
         User user = userRepository.findById(companyAdminId).orElse(null);
         if (user != null) {
+            if (Boolean.TRUE.equals(user.getIsSuspendedForChargeback())
+                    || (user.getPendingDebtArs() != null && user.getPendingDebtArs().compareTo(BigDecimal.ZERO) > 0)) {
+                return SubscriptionPlan.NONE;
+            }
+
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
             if (user.getCurrentPlan() != null && user.getCurrentPlan() != SubscriptionPlan.NONE) {
                 if (user.getPlanExpirationDate() == null || user.getPlanExpirationDate().isAfter(now)) {

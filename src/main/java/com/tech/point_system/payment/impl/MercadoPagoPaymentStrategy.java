@@ -16,6 +16,8 @@ import com.tech.point_system.model.Subscription;
 import com.tech.point_system.model.User;
 import com.tech.point_system.payment.PaymentStrategy;
 import com.tech.point_system.payment.mercadopago.MercadoPagoPreferenceClient;
+import com.tech.point_system.model.Company;
+import com.tech.point_system.repository.CompanyRepository;
 import com.tech.point_system.repository.SubscriptionRepository;
 import com.tech.point_system.repository.UserRepository;
 import com.tech.point_system.service.ProrationCalculatorService;
@@ -42,6 +44,7 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
     private final MercadoPagoPreferenceClient preferenceClient;
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final ProrationCalculatorService prorationCalculatorService;
     private final SubscriptionPlanConfigService planConfigService;
 
@@ -61,38 +64,72 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
             throw new PaymentGatewayException("rejected", "free_plan", "No se puede crear un cobro de Mercado Pago para planes sin costo.", 400);
         }
 
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         String currency = "ARS";
         BigDecimal planPrice = planConfigService.getPlanPrice(dto.plan(), dto.billingPeriod(), currency);
         PlanConfigDTO planConfig = planConfigService.getPlanConfig(dto.plan());
 
-        // Formato estricto: SUB:{userId}:{plan}:{billingPeriod}:{UUID}
-        String externalRef = String.format("SUB:%s:%s:%s:%s",
-                user.getId(),
-                dto.plan().name(),
-                dto.billingPeriod().name(),
-                UUID.randomUUID()
-        );
+        boolean isRegularization = (user.getPendingDebtArs() != null && user.getPendingDebtArs().compareTo(BigDecimal.ZERO) > 0)
+                || Boolean.TRUE.equals(user.getIsSuspendedForChargeback());
+
+        BigDecimal finalPrice;
+        String itemTitle;
+        String itemDescription;
+        String externalRef;
+
+        if (isRegularization) {
+            BigDecimal pendingDebt = user.getPendingDebtArs() != null ? user.getPendingDebtArs() : BigDecimal.ZERO;
+            boolean hasFutureLegitimateDays = user.getPlanExpirationDate() != null && user.getPlanExpirationDate().isAfter(now);
+
+            if (hasFutureLegitimateDays) {
+                finalPrice = pendingDebt;
+                itemTitle = "Regularización de Saldo Deudor - Pointly";
+                itemDescription = "Cancelación de deuda acumulada por contracargo";
+            } else {
+                finalPrice = pendingDebt.add(planPrice);
+                itemTitle = "Regularización de Deuda + Suscripción " + planConfig.name();
+                itemDescription = "Cancelación de deuda pendiente y reactivación de plan";
+            }
+
+            externalRef = String.format("REC:%s:%s:%s:%s",
+                    user.getId(),
+                    dto.plan().name(),
+                    dto.billingPeriod().name(),
+                    UUID.randomUUID()
+            );
+
+            log.info("[CHECKOUT PRO] 💳 [REGULARIZACIÓN] Usuario '{}' regularizando deuda de {} ARS (Total a cobrar: {} ARS, Días legítimos futuros: {}) | ExternalRef='{}'",
+                    user.getId(), pendingDebt, finalPrice, hasFutureLegitimateDays, externalRef);
+        } else {
+            finalPrice = planPrice;
+            itemTitle = "Suscripción Pointly - " + planConfig.name();
+            itemDescription = planConfig.tagline();
+
+            externalRef = String.format("SUB:%s:%s:%s:%s",
+                    user.getId(),
+                    dto.plan().name(),
+                    dto.billingPeriod().name(),
+                    UUID.randomUUID()
+            );
+        }
 
         String backUrl = properties.getBackUrl();
         String userName = StringUtils.hasText(user.getName()) ? user.getName() : "Usuario";
         String payerEmail = properties.isSandbox() ? "test_user_buyer@testuser.com" : (StringUtils.hasText(user.getEmail()) ? user.getEmail() : "cliente@pointly.app");
-        // auto_return solo es válido en Mercado Pago con dominios públicos HTTPS reales (rechaza http:// y localhost)
         String autoReturn = (StringUtils.hasText(backUrl) && backUrl.startsWith("https://") && !backUrl.contains("localhost")) ? "approved" : null;
 
         MpPreferenceIdentification identification = (user != null && StringUtils.hasText(user.getDni()))
                 ? new MpPreferenceIdentification("DNI", user.getDni())
                 : null;
 
-        // NOTA: Se pasa notificationUrl = null para evitar que Mercado Pago active el despachador de IPN legado
-        // y delegar el 100% de los eventos al sistema moderno de Webhooks v2 configurado en el Dashboard de la aplicación.
         MpPreferenceRequest preferenceRequest = new MpPreferenceRequest(
                 List.of(new MpPreferenceItem(
                         "plan-" + dto.plan().name().toLowerCase(),
-                        "Suscripción Pointly - " + planConfig.name(),
-                        planConfig.tagline(),
+                        itemTitle,
+                        itemDescription,
                         "services",
                         1,
-                        planPrice,
+                        finalPrice,
                         currency
                 )),
                 new MpPreferencePayer(
@@ -113,7 +150,6 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
                 false
         );
 
-
         try {
             MpPreferenceResponse prefResponse = preferenceClient.createPreference(preferenceRequest);
             String checkoutUrl = properties.isSandbox() && StringUtils.hasText(prefResponse.sandboxInitPoint())
@@ -128,7 +164,7 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
                     dto.plan(),
                     SubscriptionStatus.PENDING,
                     PaymentProvider.MERCADO_PAGO,
-                    planPrice,
+                    finalPrice,
                     currency,
                     checkoutUrl,
                     externalRef
@@ -255,6 +291,9 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
             return;
         }
 
+        boolean isWebhookChargeback = isChargebackEvent(payload);
+        boolean isWebhookRefund = isRefundEvent(payload);
+
         // Si es notificación de orden comercial (Checkout Pro IPN o Webhook)
         if (topic.contains("merchant_order") || topic.contains("merchant-order")) {
             log.info("[CHECKOUT PRO WEBHOOK] 📦 Notificación de Merchant Order #{}", entityId);
@@ -262,7 +301,7 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
             if (order != null && order.payments() != null && !order.payments().isEmpty()) {
                 for (var orderPayment : order.payments()) {
                     if (orderPayment.id() != null) {
-                        processSinglePayment(orderPayment.id().toString());
+                        processSinglePayment(orderPayment.id().toString(), isWebhookChargeback, isWebhookRefund);
                     }
                 }
             } else {
@@ -272,11 +311,12 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
         }
 
         // Si es notificación directa de pago
-        processSinglePayment(entityId);
+        processSinglePayment(entityId, isWebhookChargeback, isWebhookRefund);
     }
 
-    private void processSinglePayment(String paymentId) {
-        log.info("[CHECKOUT PRO WEBHOOK] 🆔 ID de Pago: '{}'. Consultando en Mercado Pago API...", paymentId);
+    private void processSinglePayment(String paymentId, boolean isWebhookChargeback, boolean isWebhookRefund) {
+        log.info("[CHECKOUT PRO WEBHOOK] 🆔 ID de Pago: '{}' (WebhookChargeback={}, WebhookRefund={}). Consultando en Mercado Pago API...",
+                paymentId, isWebhookChargeback, isWebhookRefund);
 
         try {
             MpPaymentResponse payment = preferenceClient.getPayment(paymentId);
@@ -297,20 +337,39 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
                 return;
             }
 
+            // Identificar si el pago fue revocado (contracargo bancario o reembolso)
+            boolean isChargedBack = isWebhookChargeback
+                    || "charged_back".equals(status)
+                    || "charged_back".equals(statusDetail)
+                    || (statusDetail != null && statusDetail.contains("chargeback"))
+                    || (statusDetail != null && statusDetail.contains("charged_back"));
+
+            boolean isRefunded = isWebhookRefund
+                    || "refunded".equals(status)
+                    || "refunded".equals(statusDetail)
+                    || "partially_refunded".equals(statusDetail)
+                    || (statusDetail != null && statusDetail.contains("refund"));
+
+            boolean isRevoked = isChargedBack || isRefunded;
+
             // REGLA 4: Idempotencia Estricta
-            if (isPaymentAlreadyProcessed(paymentId, status, externalRef)) {
-                log.info("[CHECKOUT PRO WEBHOOK] ℹ️ Pago #{} con estado '{}' ya fue procesado previamente. Omitiendo duplicación de lógica.", paymentId, status);
+            if (isPaymentAlreadyProcessed(paymentId, isRevoked, status, externalRef)) {
+                log.info("[CHECKOUT PRO WEBHOOK] ℹ️ Pago #{} con estado '{}/{}' ya fue procesado previamente. Omitiendo duplicación de lógica.",
+                        paymentId, status, statusDetail);
                 return;
             }
 
             // Procesamiento de Matriz Exhaustiva de Estados
-            switch (status) {
-                case "approved" -> handlePaymentApproved(payment, statusDetail, externalRef);
-                case "in_process", "pending" -> handlePaymentPending(payment, statusDetail, externalRef);
-                case "rejected" -> handlePaymentRejected(payment, statusDetail, externalRef);
-                case "cancelled" -> handlePaymentCancelled(payment, statusDetail, externalRef);
-                case "refunded", "charged_back" -> handlePaymentRevoked(payment, statusDetail, externalRef);
-                default -> log.warn("[CHECKOUT PRO WEBHOOK] ⚠️ Estado desconocido '{}' para pago #{}", status, payment.id());
+            if (isRevoked) {
+                handlePaymentRevoked(payment, statusDetail, externalRef, isChargedBack);
+            } else {
+                switch (status) {
+                    case "approved" -> handlePaymentApproved(payment, statusDetail, externalRef);
+                    case "in_process", "pending" -> handlePaymentPending(payment, statusDetail, externalRef);
+                    case "rejected" -> handlePaymentRejected(payment, statusDetail, externalRef);
+                    case "cancelled" -> handlePaymentCancelled(payment, statusDetail, externalRef);
+                    default -> log.warn("[CHECKOUT PRO WEBHOOK] ⚠️ Estado desconocido '{}' (detail: '{}') para pago #{}", status, statusDetail, payment.id());
+                }
             }
 
         } catch (Exception e) {
@@ -318,13 +377,35 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
         }
     }
 
+    private boolean isChargebackEvent(Map<String, Object> payload) {
+        if (payload == null) return false;
+        String raw = payload.toString().toLowerCase();
+        return raw.contains("chargeback")
+                || raw.contains("topic_chargebacks_wh")
+                || raw.contains("contracargo");
+    }
 
-    private boolean isPaymentAlreadyProcessed(String paymentId, String status, String externalRef) {
-        var existingSubOpt = subscriptionRepository.findByExternalSubscriptionId(paymentId);
-        if (existingSubOpt.isEmpty()) {
+    private boolean isRefundEvent(Map<String, Object> payload) {
+        if (payload == null) return false;
+        String raw = payload.toString().toLowerCase();
+        return raw.contains("topic_refunds_wh")
+                || raw.contains("refund.created")
+                || raw.contains("refunds");
+    }
+
+
+    private boolean isPaymentAlreadyProcessed(String paymentId, boolean isRevoked, String status, String externalRef) {
+        Subscription sub = subscriptionRepository.findByExternalSubscriptionId(paymentId)
+                .or(() -> subscriptionRepository.findByExternalSubscriptionId(externalRef))
+                .orElse(null);
+
+        if (sub == null) {
             return false;
         }
-        Subscription sub = existingSubOpt.get();
+
+        if (isRevoked) {
+            return sub.getStatus() == SubscriptionStatus.EXPIRED;
+        }
 
         if ("approved".equals(status)) {
             if (sub.getStatus() == SubscriptionStatus.APPROVED) {
@@ -340,8 +421,6 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
                 return true;
             }
             return false;
-        } else if ("refunded".equals(status) || "charged_back".equals(status)) {
-            return sub.getStatus() == SubscriptionStatus.EXPIRED;
         } else if ("rejected".equals(status) || "cancelled".equals(status)) {
             return sub.getStatus() == SubscriptionStatus.PAYMENT_FAILED || sub.getStatus() == SubscriptionStatus.EXPIRED;
         }
@@ -444,6 +523,66 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
                 log.info("[CHECKOUT PRO WEBHOOK] ✅ [UPGRADE ACREDITADO] Orden ID: {} - Usuario '{}' actualizado a plan '{}' (Vencimiento conservado: {})",
                         subscription.getId(), user.getEmail(), targetPlan, user.getPlanExpirationDate());
             }
+        } else if (externalRef.startsWith("REC:") || externalRef.startsWith("REC_") || externalRef.startsWith("REC-")) {
+            // Regularización y Desbloqueo: REC:{userId}:{plan}:{billingPeriod}:{UUID}
+            if (parts.length >= 4) {
+                String userId = parts[1];
+                SubscriptionPlan plan = SubscriptionPlan.valueOf(parts[2]);
+                BillingPeriod billingPeriod = BillingPeriod.valueOf(parts[3]);
+
+                User user = userRepository.findById(userId).orElse(null);
+                if (user == null) {
+                    log.error("[CHECKOUT PRO WEBHOOK] ❌ Usuario '{}' no encontrado en BD para regularización de pago #{}", userId, payment.id());
+                    return;
+                }
+
+                OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+
+                // 1. Liquidar la deuda acumulada y levantar la suspensión
+                user.setPendingDebtArs(BigDecimal.ZERO);
+                user.setIsSuspendedForChargeback(false);
+
+                // 2. Restaurar / Extender vigencia:
+                // Si la fecha de vencimiento actual ya venció (<= now o nula), asignar now.plusDays(días) y el plan solicitado
+                // Si todavía tenía días legítimos futuros a favor (> now), conservar esa fecha y reactivar el plan
+                if (user.getPlanExpirationDate() == null || !user.getPlanExpirationDate().isAfter(now)) {
+                    user.setPlanExpirationDate(now.plusDays(billingPeriod.getDays()));
+                    user.setCurrentPlan(plan);
+                } else if (user.getCurrentPlan() == SubscriptionPlan.NONE) {
+                    user.setCurrentPlan(plan);
+                }
+                user.setIsFreeTrialOver(true);
+                userRepository.save(user);
+
+                // 3. Reactivar automáticamente todas las empresas del usuario
+                List<Company> userCompanies = companyRepository.findAllByAdminId(user.getId());
+                userCompanies.forEach(c -> {
+                    c.setIsEnabled(true);
+                    c.setDisabledDate(null);
+                });
+                companyRepository.saveAll(userCompanies);
+
+                // 4. Guardar la orden de suscripción como APPROVED
+                Subscription subscription = subscriptionRepository.findByExternalSubscriptionId(payment.id().toString())
+                        .orElseGet(() -> Subscription.builder()
+                                .user(user)
+                                .createdAt(now)
+                                .build());
+
+                subscription.setUser(user);
+                subscription.setPlan(user.getCurrentPlan());
+                subscription.setBillingPeriod(billingPeriod);
+                subscription.setStatus(SubscriptionStatus.APPROVED);
+                subscription.setProvider(PaymentProvider.MERCADO_PAGO);
+                subscription.setPrice(payment.transactionAmount());
+                subscription.setCurrency("ARS");
+                subscription.setExternalSubscriptionId(payment.id().toString());
+                subscription.setStartDate(now);
+
+                subscriptionRepository.save(subscription);
+                log.info("[CHECKOUT PRO WEBHOOK] 🔓 [REGULARIZACIÓN EXITOSA] Deuda saldada para usuario '{}'. Suspensión levantada. {} empresas reactivadas. Vencimiento: {}",
+                        user.getEmail(), userCompanies.size(), user.getPlanExpirationDate());
+            }
         }
     }
 
@@ -457,7 +596,8 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
         log.warn("[CHECKOUT PRO WEBHOOK] ❌ [PAGO RECHAZADO] Pago #{} rechazado (status_detail='{}') | ExternalRef='{}'",
                 payment.id(), statusDetail, externalRef);
 
-        if (externalRef.startsWith("SUB:") || externalRef.startsWith("SUB_") || externalRef.startsWith("SUB-")) {
+        if (externalRef.startsWith("SUB:") || externalRef.startsWith("SUB_") || externalRef.startsWith("SUB-")
+                || externalRef.startsWith("REC:") || externalRef.startsWith("REC_") || externalRef.startsWith("REC-")) {
             String[] parts = parseExternalReference(externalRef);
             if (parts.length >= 2) {
                 String userId = parts[1];
@@ -465,7 +605,7 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
                     if (sub.getStatus() == SubscriptionStatus.PENDING) {
                         sub.setStatus(SubscriptionStatus.PAYMENT_FAILED);
                         subscriptionRepository.save(sub);
-                        log.info("[CHECKOUT PRO WEBHOOK] ⚠️ Intento de suscripción ID: {} marcado como PAYMENT_FAILED.", sub.getId());
+                        log.info("[CHECKOUT PRO WEBHOOK] ⚠️ Intento de suscripción/regularización ID: {} marcado como PAYMENT_FAILED.", sub.getId());
                     }
                 });
             }
@@ -478,7 +618,8 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
         log.warn("[CHECKOUT PRO WEBHOOK] 🚫 [PAGO CANCELADO] Pago #{} cancelado (status_detail='{}') | ExternalRef='{}'",
                 payment.id(), statusDetail, externalRef);
 
-        if (externalRef.startsWith("SUB:") || externalRef.startsWith("SUB_") || externalRef.startsWith("SUB-")) {
+        if (externalRef.startsWith("SUB:") || externalRef.startsWith("SUB_") || externalRef.startsWith("SUB-")
+                || externalRef.startsWith("REC:") || externalRef.startsWith("REC_") || externalRef.startsWith("REC-")) {
             String[] parts = parseExternalReference(externalRef);
             if (parts.length >= 2) {
                 String userId = parts[1];
@@ -486,26 +627,67 @@ public class MercadoPagoPaymentStrategy implements PaymentStrategy {
                     if (sub.getStatus() == SubscriptionStatus.PENDING) {
                         sub.setStatus(SubscriptionStatus.PAYMENT_FAILED);
                         subscriptionRepository.save(sub);
-                        log.info("[CHECKOUT PRO WEBHOOK] ⚠️ Suscripción ID: {} marcada como PAYMENT_FAILED por cancelación.", sub.getId());
+                        log.info("[CHECKOUT PRO WEBHOOK] ⚠️ Suscripción/regularización ID: {} marcada como PAYMENT_FAILED por cancelación.", sub.getId());
                     }
                 });
             }
         }
     }
 
-    private void handlePaymentRevoked(MpPaymentResponse payment, String statusDetail, String externalRef) {
-        log.warn("[CHECKOUT PRO WEBHOOK] 🚫 [REVOCACIÓN DE ACCESO] Pago #{} reembolsado o con contracargo ({}). Expirando cobertura de suscripción...",
-                payment.id(), statusDetail);
+    private void handlePaymentRevoked(MpPaymentResponse payment, String statusDetail, String externalRef, boolean isChargedBack) {
+        String status = payment.status() != null ? payment.status().toLowerCase() : "";
+        log.warn("[CHECKOUT PRO WEBHOOK] 🚫 [REVOCACIÓN DE ACCESO] Pago #{} revocado con estado '{}' (detail: '{}', isChargedBack={}). Procesando deducción de días y políticas anti-contracargo...",
+                payment.id(), status, statusDetail, isChargedBack);
 
-        subscriptionRepository.findByExternalSubscriptionId(payment.id().toString()).ifPresent(sub -> {
+        subscriptionRepository.findByExternalSubscriptionId(payment.id().toString())
+                .or(() -> subscriptionRepository.findByExternalSubscriptionId(externalRef))
+                .ifPresent(sub -> {
             sub.setStatus(SubscriptionStatus.EXPIRED);
             subscriptionRepository.save(sub);
-            if (sub.getUser() != null) {
-                User user = sub.getUser();
-                user.setCurrentPlan(SubscriptionPlan.NONE);
+
+            User user = sub.getUser();
+            if (user != null) {
+                BillingPeriod period = sub.getBillingPeriod();
+                int daysToDeduct = period != null ? period.getDays() : 30;
+                OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+
+                // 1. Descuento proporcional de días del período desconocido
+                if (user.getPlanExpirationDate() != null) {
+                    OffsetDateTime currentExp = user.getPlanExpirationDate();
+                    OffsetDateTime newExp = currentExp.minusDays(daysToDeduct);
+                    user.setPlanExpirationDate(newExp);
+
+                    if (!newExp.isAfter(now)) {
+                        user.setCurrentPlan(SubscriptionPlan.NONE);
+                    }
+                } else {
+                    user.setCurrentPlan(SubscriptionPlan.NONE);
+                }
+
+                // 2. Si es contracargo (charged_back): acumular deuda monetaria y suspender comercios (Soft Ban)
+                if (isChargedBack) {
+                    BigDecimal chargedBackAmount = payment.transactionAmount() != null ? payment.transactionAmount() : BigDecimal.ZERO;
+                    BigDecimal currentDebt = user.getPendingDebtArs() != null ? user.getPendingDebtArs() : BigDecimal.ZERO;
+                    user.setPendingDebtArs(currentDebt.add(chargedBackAmount));
+                    user.setIsSuspendedForChargeback(true);
+
+                    // Congelar todas las sucursales del usuario
+                    List<Company> userCompanies = companyRepository.findAllByAdminId(user.getId());
+                    userCompanies.forEach(c -> {
+                        c.setIsEnabled(false);
+                        c.setDisabledDate(now);
+                    });
+                    companyRepository.saveAll(userCompanies);
+
+                    log.warn("[CHECKOUT PRO WEBHOOK] 🚨 [CONTRACARGO DETECTADO] Usuario '{}' suspendido. Deuda acumulada: {} ARS (+{} ARS). Vencimiento ajustado: {}. {} sucursales congeladas.",
+                            user.getEmail(), user.getPendingDebtArs(), chargedBackAmount, user.getPlanExpirationDate(), userCompanies.size());
+                } else {
+                    log.info("[CHECKOUT PRO WEBHOOK] ℹ️ [REEMBOLSO] Reembolso aplicado para usuario '{}'. Días descontados: {}. Nuevo vencimiento: {}",
+                            user.getEmail(), daysToDeduct, user.getPlanExpirationDate());
+                }
+
                 userRepository.save(user);
             }
-            log.info("[CHECKOUT PRO WEBHOOK] 🛑 Suscripción ID: {} marcada como EXPIRED por reembolso/contracargo.", sub.getId());
         });
     }
 

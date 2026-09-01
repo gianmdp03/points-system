@@ -3,6 +3,7 @@ package com.tech.point_system.dto.user;
 import com.tech.point_system._enum.Role;
 import com.tech.point_system._enum.SubscriptionPlan;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
@@ -16,6 +17,8 @@ public record UserDetailDTO(
         LocalDate freeTrialStartTime,
         LocalDate freeTrialEndTime,
         SubscriptionPlan currentPlan,
-        OffsetDateTime planExpirationDate
+        OffsetDateTime planExpirationDate,
+        Boolean isSuspendedForChargeback,
+        BigDecimal pendingDebtArs
 ) {}
 

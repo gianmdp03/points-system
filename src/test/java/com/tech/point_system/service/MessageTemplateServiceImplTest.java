@@ -186,6 +186,93 @@ class MessageTemplateServiceImplTest {
     }
 
     @Test
+    void testGetAllTemplatesByCompany_Success() {
+        when(companyAccessValidator.validateAccess(10L, "usr-admin-1")).thenReturn(company);
+        when(messageTemplateRepository.countByCompanyId(10L)).thenReturn(1L);
+        when(messageTemplateRepository.findAllByCompanyId(10L)).thenReturn(List.of(template));
+        when(messageTemplateMapper.toDetailDTO(template)).thenReturn(detailDTO);
+
+        List<MessageTemplateDetailDTO> result = messageTemplateService.getAllTemplatesByCompany("usr-admin-1", 10L);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(1L, result.get(0).id());
+        verify(companyAccessValidator).validateAccess(10L, "usr-admin-1");
+    }
+
+    @Test
+    void testGetAllTemplatesByCompany_AutoSeedWhenEmpty() {
+        when(companyAccessValidator.validateAccess(10L, "usr-admin-1")).thenReturn(company);
+        when(messageTemplateRepository.countByCompanyId(10L)).thenReturn(0L);
+        when(messageTemplateRepository.findAllByCompanyId(10L)).thenReturn(List.of(template));
+        when(messageTemplateMapper.toDetailDTO(template)).thenReturn(detailDTO);
+
+        List<MessageTemplateDetailDTO> result = messageTemplateService.getAllTemplatesByCompany("usr-admin-1", 10L);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(messageTemplateRepository).saveAll(any());
+    }
+
+    @Test
+    void testDeleteTemplate_Success() {
+        when(messageTemplateRepository.findByIdAndCompanyId(1L, 10L)).thenReturn(Optional.of(template));
+        doNothing().when(messageTemplateRepository).delete(template);
+
+        messageTemplateService.deleteTemplate("usr-admin-1", 10L, 1L);
+
+        verify(companyAccessValidator).checkAccessOnly(10L, "usr-admin-1");
+        verify(messageTemplateRepository).delete(template);
+    }
+
+    @Test
+    void testDeleteTemplate_NotFound() {
+        when(messageTemplateRepository.findByIdAndCompanyId(99L, 10L)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () ->
+                messageTemplateService.deleteTemplate("usr-admin-1", 10L, 99L));
+    }
+
+    @Test
+    void testGetRandomActiveTemplate_Found() {
+        MessageTemplate template2 = new MessageTemplate();
+        template2.setId(2L);
+        template2.setType(NotificationType.CLIENT_RETENTION_NOTIFICATION);
+        template2.setIsEnabled(true);
+
+        when(messageTemplateRepository.findByCompanyIdAndTypeAndIsEnabledTrue(10L, NotificationType.CLIENT_RETENTION_NOTIFICATION))
+                .thenReturn(List.of(template, template2));
+
+        Optional<MessageTemplate> result = messageTemplateService.getRandomActiveTemplate(10L, NotificationType.CLIENT_RETENTION_NOTIFICATION);
+
+        assertTrue(result.isPresent());
+        assertTrue(result.get().getId().equals(1L) || result.get().getId().equals(2L));
+    }
+
+    @Test
+    void testGetRandomActiveTemplate_Empty() {
+        when(messageTemplateRepository.findByCompanyIdAndTypeAndIsEnabledTrue(10L, NotificationType.WELCOME_NOTIFICATION))
+                .thenReturn(List.of());
+
+        Optional<MessageTemplate> result = messageTemplateService.getRandomActiveTemplate(10L, NotificationType.WELCOME_NOTIFICATION);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testGetRandomActiveTemplatePreview_Success() {
+        when(messageTemplateRepository.findByCompanyIdAndTypeAndIsEnabledTrue(10L, NotificationType.CLIENT_RETENTION_NOTIFICATION))
+                .thenReturn(List.of(template));
+        when(messageTemplateMapper.toDetailDTO(template)).thenReturn(detailDTO);
+
+        MessageTemplateDetailDTO result = messageTemplateService.getRandomActiveTemplatePreview("usr-admin-1", 10L, NotificationType.CLIENT_RETENTION_NOTIFICATION);
+
+        assertNotNull(result);
+        assertEquals(1L, result.id());
+        verify(companyAccessValidator).checkAccessOnly(10L, "usr-admin-1");
+    }
+
+    @Test
     void testResetDefaultTemplates_Success() {
         when(companyAccessValidator.validateAccess(10L, "usr-admin-1")).thenReturn(company);
         when(messageTemplateRepository.findByCompanyId(10L, Pageable.unpaged())).thenReturn(new PageImpl<>(List.of(template)));
@@ -198,5 +285,14 @@ class MessageTemplateServiceImplTest {
         assertFalse(result.isEmpty());
         verify(messageTemplateRepository).deleteAll(any());
         verify(messageTemplateRepository).saveAll(any());
+    }
+
+    @Test
+    void testGetRandomActiveTemplatePreview_NotFound() {
+        when(messageTemplateRepository.findByCompanyIdAndTypeAndIsEnabledTrue(10L, NotificationType.WELCOME_NOTIFICATION))
+                .thenReturn(List.of());
+
+        assertThrows(NotFoundException.class, () ->
+                messageTemplateService.getRandomActiveTemplatePreview("usr-admin-1", 10L, NotificationType.WELCOME_NOTIFICATION));
     }
 }

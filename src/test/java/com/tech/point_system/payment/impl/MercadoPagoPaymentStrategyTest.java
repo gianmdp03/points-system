@@ -47,6 +47,9 @@ class MercadoPagoPaymentStrategyTest {
     private UserRepository userRepository;
 
     @Mock
+    private com.tech.point_system.repository.CompanyRepository companyRepository;
+
+    @Mock
     private MercadoPagoPreferenceClient preferenceClient;
 
     @Mock
@@ -385,6 +388,212 @@ class MercadoPagoPaymentStrategyTest {
         // Verify no updates or modifications were re-executed
         verify(userRepository, never()).findById(any());
         verify(subscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    void testProcessWebhook_ChargedBack_DeductsDaysAccumulatesDebtAndFreezesCompanies() {
+        OffsetDateTime initialExp = OffsetDateTime.now(ZoneOffset.UTC).plusDays(300);
+        user.setCurrentPlan(SubscriptionPlan.PRO);
+        user.setPlanExpirationDate(initialExp);
+        user.setPendingDebtArs(BigDecimal.ZERO);
+        user.setIsSuspendedForChargeback(false);
+
+        Subscription sub = Subscription.builder()
+                .id(50L)
+                .user(user)
+                .plan(SubscriptionPlan.PRO)
+                .billingPeriod(BillingPeriod.MONTHLY)
+                .status(SubscriptionStatus.APPROVED)
+                .externalSubscriptionId("998811")
+                .build();
+
+        com.tech.point_system.model.Company comp1 = new com.tech.point_system.model.Company();
+        comp1.setId(1L);
+        comp1.setIsEnabled(true);
+
+        com.tech.point_system.model.Company comp2 = new com.tech.point_system.model.Company();
+        comp2.setId(2L);
+        comp2.setIsEnabled(true);
+
+        when(companyRepository.findAllByAdminId("usr-100")).thenReturn(List.of(comp1, comp2));
+
+        MpPaymentResponse payment = new MpPaymentResponse(
+                998811L,
+                "charged_back",
+                "charged_back",
+                "SUB:usr-100:PRO:MONTHLY:uuid-cb",
+                new BigDecimal("19990.00"),
+                null,
+                "visa",
+                null
+        );
+
+        when(preferenceClient.getPayment("998811")).thenReturn(payment);
+        when(subscriptionRepository.findByExternalSubscriptionId("998811")).thenReturn(Optional.of(sub));
+
+        strategy.processWebhook(Map.of("data", Map.of("id", "998811")));
+
+        // 1. Descuento proporcional de días (300 - 30 = 270 días legítimos restantes)
+        assertEquals(initialExp.minusDays(30), user.getPlanExpirationDate());
+        assertEquals(SubscriptionPlan.PRO, user.getCurrentPlan());
+
+        // 2. Acumulación de deuda monetaria y soft ban
+        assertEquals(new BigDecimal("19990.00"), user.getPendingDebtArs());
+        assertTrue(user.getIsSuspendedForChargeback());
+
+        // 3. Sucursales congeladas
+        assertFalse(comp1.getIsEnabled());
+        assertNotNull(comp1.getDisabledDate());
+        assertFalse(comp2.getIsEnabled());
+        assertNotNull(comp2.getDisabledDate());
+        verify(companyRepository).saveAll(anyList());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void testProcessWebhook_MpSimulatorChargebackEvent_TriggersChargebackEvenIfPaymentStatusApprovedInApi() {
+        OffsetDateTime initialExp = OffsetDateTime.now(ZoneOffset.UTC).plusDays(300);
+        user.setCurrentPlan(SubscriptionPlan.PRO);
+        user.setPlanExpirationDate(initialExp);
+        user.setPendingDebtArs(BigDecimal.ZERO);
+        user.setIsSuspendedForChargeback(false);
+
+        Subscription sub = Subscription.builder()
+                .id(60L)
+                .user(user)
+                .plan(SubscriptionPlan.PRO)
+                .billingPeriod(BillingPeriod.MONTHLY)
+                .status(SubscriptionStatus.APPROVED)
+                .externalSubscriptionId("175609431207")
+                .build();
+
+        com.tech.point_system.model.Company comp = new com.tech.point_system.model.Company();
+        comp.setId(1L);
+        comp.setIsEnabled(true);
+
+        when(companyRepository.findAllByAdminId("usr-100")).thenReturn(List.of(comp));
+
+        // En la API de MP el pago sigue figurando como approved/accredited
+        MpPaymentResponse payment = new MpPaymentResponse(
+                175609431207L,
+                "approved",
+                "accredited",
+                "SUB:usr-100:PRO:MONTHLY:uuid-simulator",
+                new BigDecimal("19990.00"),
+                "2026-08-31T00:00:00Z",
+                "visa",
+                null
+        );
+
+        when(preferenceClient.getPayment("175609431207")).thenReturn(payment);
+        when(subscriptionRepository.findByExternalSubscriptionId("175609431207")).thenReturn(Optional.of(sub));
+
+        // Payload del simulador de Mercado Pago con type=topic_chargebacks_wh
+        Map<String, Object> simulatorPayload = Map.of(
+                "data", Map.of("id", "175609431207"),
+                "type", "topic_chargebacks_wh",
+                "action", "test.created"
+        );
+
+        strategy.processWebhook(simulatorPayload);
+
+        // 1. Debe deducir los 30 días
+        assertEquals(initialExp.minusDays(30), user.getPlanExpirationDate());
+
+        // 2. Debe acumular la deuda y aplicar la suspensión
+        assertEquals(new BigDecimal("19990.00"), user.getPendingDebtArs());
+        assertTrue(user.getIsSuspendedForChargeback());
+
+        // 3. Debe congelar las empresas
+        assertFalse(comp.getIsEnabled());
+        assertNotNull(comp.getDisabledDate());
+        verify(companyRepository).saveAll(anyList());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void testCreateSubscription_WithPendingDebtAndFutureDays_GeneratesRecPreferenceOnlyForDebt() {
+        user.setIsSuspendedForChargeback(true);
+        user.setPendingDebtArs(new BigDecimal("19990.00"));
+        user.setPlanExpirationDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(50));
+
+        SubscriptionRequestDTO dto = new SubscriptionRequestDTO(
+                SubscriptionPlan.PRO,
+                PaymentProvider.MERCADO_PAGO,
+                BillingPeriod.MONTHLY,
+                null
+        );
+
+        PlanConfigDTO planConfig = new PlanConfigDTO(
+                SubscriptionPlan.PRO, "Plan Pro", "Desc",
+                new BigDecimal("19990.00"), new BigDecimal("53990.00"), new BigDecimal("99990.00"), new BigDecimal("199990.00"),
+                new BigDecimal("29.00"), new BigDecimal("79.00"), new BigDecimal("149.00"), new BigDecimal("290.00"),
+                1000, -1, 3, true, true, List.of()
+        );
+
+        when(planConfigService.getPlanPrice(eq(SubscriptionPlan.PRO), eq(BillingPeriod.MONTHLY), eq("ARS")))
+                .thenReturn(new BigDecimal("19990.00"));
+        when(planConfigService.getPlanConfig(SubscriptionPlan.PRO)).thenReturn(planConfig);
+        when(properties.getBackUrl()).thenReturn("http://localhost:4200/subscription/callback");
+
+        MpPreferenceResponse mockPref = new MpPreferenceResponse(
+                "PREF-REC-1",
+                "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=PREF-REC-1",
+                null,
+                "REC:usr-100:PRO:MONTHLY:uuid-rec"
+        );
+        when(preferenceClient.createPreference(any(MpPreferenceRequest.class))).thenReturn(mockPref);
+
+        SubscriptionResponseDTO response = strategy.createSubscription(user, dto);
+
+        assertNotNull(response);
+        assertEquals(new BigDecimal("19990.00"), response.price());
+        assertTrue(response.externalSubscriptionId().startsWith("REC:usr-100:PRO:MONTHLY:"));
+    }
+
+    @Test
+    void testProcessWebhook_ApprovedRecPayment_LiquidatesDebtAndReactivatesCompanies() {
+        user.setIsSuspendedForChargeback(true);
+        user.setPendingDebtArs(new BigDecimal("19990.00"));
+        OffsetDateTime legitFutureExp = OffsetDateTime.now(ZoneOffset.UTC).plusDays(100);
+        user.setPlanExpirationDate(legitFutureExp);
+
+        com.tech.point_system.model.Company comp = new com.tech.point_system.model.Company();
+        comp.setId(10L);
+        comp.setIsEnabled(false);
+        comp.setDisabledDate(OffsetDateTime.now(ZoneOffset.UTC).minusDays(5));
+
+        when(companyRepository.findAllByAdminId("usr-100")).thenReturn(List.of(comp));
+
+        MpPaymentResponse payment = new MpPaymentResponse(
+                776655L,
+                "approved",
+                "accredited",
+                "REC:usr-100:PRO:MONTHLY:uuid-rec-123",
+                new BigDecimal("19990.00"),
+                "2026-08-25T00:00:00Z",
+                "visa",
+                null
+        );
+
+        when(preferenceClient.getPayment("776655")).thenReturn(payment);
+        when(subscriptionRepository.findByExternalSubscriptionId("776655")).thenReturn(Optional.empty());
+        when(userRepository.findById("usr-100")).thenReturn(Optional.of(user));
+        when(subscriptionRepository.save(any(Subscription.class))).thenAnswer(i -> i.getArgument(0));
+
+        strategy.processWebhook(Map.of("data", Map.of("id", "776655")));
+
+        // 1. Deuda saldada y suspensión levantada
+        assertEquals(BigDecimal.ZERO, user.getPendingDebtArs());
+        assertFalse(user.getIsSuspendedForChargeback());
+
+        // 2. Vigencia preservada
+        assertEquals(legitFutureExp, user.getPlanExpirationDate());
+
+        // 3. Empresas reactivadas
+        assertTrue(comp.getIsEnabled());
+        assertNull(comp.getDisabledDate());
+        verify(companyRepository).saveAll(List.of(comp));
     }
 }
 

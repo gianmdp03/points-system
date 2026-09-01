@@ -22,6 +22,8 @@ public record CompanyPublicDetailDTO(
         Integer pointsExpirationDays,
         Boolean isInactiveClientPurgeEnabled,
         Integer inactiveClientPurgeDays,
+        Boolean isClientRetentionEnabled,
+        Integer clientRetentionDays,
         List<ProductListDTO> products,
         List<PromotionListDTO> activePromotions,
         List<RewardListDTO> rewards

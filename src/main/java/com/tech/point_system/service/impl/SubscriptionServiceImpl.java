@@ -56,7 +56,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 && user.getPlanExpirationDate() != null
                 && user.getPlanExpirationDate().isAfter(now);
 
-        if (hasActivePlan) {
+        boolean isDebtRegularization = (user.getPendingDebtArs() != null && user.getPendingDebtArs().compareTo(BigDecimal.ZERO) > 0)
+                || Boolean.TRUE.equals(user.getIsSuspendedForChargeback());
+
+        if (hasActivePlan && !isDebtRegularization) {
             SubscriptionPlan activePlan = user.getCurrentPlan();
             if (activePlan != dto.plan()) {
                 int activeTier = SubscriptionPlan.getTierOf(activePlan);

@@ -54,6 +54,9 @@ class ClientPublicControllerTest {
     @Mock
     private PointsAccountMapper pointsAccountMapper;
 
+    @Mock
+    private com.tech.point_system.service.EmailService emailService;
+
     @InjectMocks
     private ClientPublicController clientPublicController;
 

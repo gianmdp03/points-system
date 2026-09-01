@@ -116,7 +116,13 @@ public class SubscriptionWebhookController {
 
         // 1. Query Params
         if (queryParams != null) {
-            combinedPayload.putAll(queryParams);
+            for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+                combinedPayload.put(entry.getKey(), entry.getValue());
+                combinedPayload.put("query_" + entry.getKey(), entry.getValue());
+            }
+        }
+        if (StringUtils.hasText(request.getQueryString())) {
+            combinedPayload.put("raw_query_string", request.getQueryString());
         }
 
         // 2. Form URL Encoded Parameters (request.getParameterMap)

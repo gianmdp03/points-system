@@ -14,6 +14,7 @@ public interface PointsAccountMapper {
     @Mapping(target = "balance", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "lastActivityDate", ignore = true)
+    @Mapping(target = "lastRetentionNotificationDate", ignore = true)
     @Mapping(target = "transactions", ignore = true)
     PointsAccount toEntity(PointsAccountRequestDTO dto);
 

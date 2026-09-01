@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title th:text="${template != null ? template.subject : (subject ?: (emailSubject ?: ('¡Tus puntos en ' + (companyName ?: (empresa ?: (company != null ? company.name : 'Pointly'))) + ' están por vencer!')))}">Aviso de vencimiento de puntos</title>
+  <style type="text/css">
+    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap');
+    
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    table { border-collapse: collapse !important; }
+    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #F8F9FA; font-family: 'Google Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1F1F1F; }
+    
+    @media screen and (max-width: 600px) {
+      .email-container { width: 100% !important; max-width: 100% !important; border-radius: 16px !important; }
+      .fluid-padding { padding-left: 20px !important; padding-right: 20px !important; padding-top: 28px !important; padding-bottom: 28px !important; }
+      .mobile-button { display: block !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F8F9FA; color: #1F1F1F; font-family: 'Google Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <!-- CONTENEDOR PRINCIPAL EXTERIOR -->
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #F8F9FA;">
+    <tr>
+      <td align="center" style="padding: 40px 16px 48px 16px;">
+        
+        <!-- HEADER MINIMALISTA ESTILO POINTLY / GOOGLE MATERIAL 3 -->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin-bottom: 24px;">
+          <tr>
+            <td align="left" style="vertical-align: middle;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="width: 40px; height: 40px; background-color: #FCE8E6; border: 1px solid #FAD2CF; border-radius: 50%; text-align: center; vertical-align: middle;">
+                    <span style="font-family: 'Google Sans', 'Inter', sans-serif; font-size: 16px; font-weight: 800; color: #D93025; line-height: 40px;" th:text="${companyName != null ? #strings.substring(companyName, 0, 1).toUpperCase() : (empresa != null ? #strings.substring(empresa, 0, 1).toUpperCase() : (company != null ? #strings.substring(company.name, 0, 1).toUpperCase() : 'P'))}">P</span>
+                  </td>
+                  <td style="padding-left: 12px; vertical-align: middle;">
+                    <span style="font-family: 'Google Sans', 'Inter', sans-serif; font-size: 20px; font-weight: 800; color: #1F1F1F; letter-spacing: -0.02em; line-height: 1;" th:text="${companyName ?: (empresa ?: (company != null ? company.name : 'Pointly'))}">Pointly</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+            <td align="right" style="vertical-align: middle;">
+              <span style="font-family: 'Google Sans', 'Inter', sans-serif; font-size: 11px; font-weight: 700; color: #D93025; background-color: #FCE8E6; border: 1px solid #FAD2CF; border-radius: 9999px; padding: 6px 14px; text-transform: uppercase; letter-spacing: 0.05em;">
+                Vencimiento Próximo
+              </span>
+            </td>
+          </tr>
+        </table>
+
+        <!-- TARJETA PRINCIPAL GOOGLE MATERIAL 3 -->
+        <table class="email-container" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #FFFFFF; border: 1px solid #C4C7C5; border-radius: 24px; overflow: hidden; box-shadow: none;">
+          <tr>
+            <td class="fluid-padding" style="padding: 40px 36px 36px 36px;">
+              
+              <!-- TÍTULO PRINCIPAL CON TIPOGRAFÍA GOOGLE SANS -->
+              <h1 style="margin: 0 0 12px 0; font-family: 'Google Sans', 'Inter', sans-serif; font-size: 28px; line-height: 1.2; font-weight: 800; color: #1F1F1F; letter-spacing: -0.02em;">
+                ¡Tus puntos están por vencer, <span style="color: #D93025;" th:text="${clientName ?: (nombre ?: (client != null ? client.name : 'Cliente'))}">Cliente</span>!
+              </h1>
+              
+              <!-- MENSAJE DE PLANTILLA (MessageTemplate.content) -->
+              <p style="margin: 0 0 28px 0; font-family: 'Google Sans', 'Inter', sans-serif; font-size: 15px; line-height: 1.6; color: #5F6368;" th:text="${template != null ? template.content : (content ?: (messageContent ?: ('¡Atención, ' + (clientName ?: (nombre ?: 'Cliente')) + '! Tus ' + (pointsExpiring ?: (puntos ?: (points ?: (account != null ? account.balance : '0')))) + ' puntos en ' + (companyName ?: (empresa ?: (company != null ? company.name : 'nuestro comercio'))) + ' vencen en ' + (expirationDays ?: (dias ?: (company != null and company.pointsExpirationDays != null ? company.pointsExpirationDays : '30'))) + ' días. Pasá antes de que expiren y canjealos.')))}">
+                ¡Atención! Tus puntos están por vencer. Pasá antes de que expiren y canjealos en nuestro local.
+              </p>
+
+              <!-- TARJETA DE PUNTOS EN RIESGO -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8F9FA; border: 1px solid #C4C7C5; border-radius: 16px; margin-bottom: 28px;">
+                <tr>
+                  <td style="padding: 24px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="vertical-align: middle;">
+                          <span style="font-family: 'Google Sans', 'Inter', sans-serif; display: block; font-size: 11px; font-weight: 700; color: #D93025; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+                            Puntos por Vencer
+                          </span>
+                          <span style="font-family: 'Google Sans', 'Inter', sans-serif; font-size: 36px; font-weight: 800; color: #D93025; line-height: 1;" th:text="${pointsExpiring ?: (puntos ?: (points ?: (account != null ? account.balance : '0')))}">
+                            0
+                          </span>
+                          <span style="font-family: 'Google Sans', 'Inter', sans-serif; font-size: 16px; font-weight: 700; color: #1F1F1F; margin-left: 4px;">
+                            pts
+                          </span>
+                        </td>
+                        <td align="right" style="vertical-align: middle;">
+                          <div style="background-color: #FFFFFF; border: 1px solid #C4C7C5; border-radius: 12px; padding: 8px 16px; text-align: center; display: inline-block;">
+                            <span style="font-family: 'Google Sans', 'Inter', sans-serif; font-size: 10px; font-weight: 700; color: #5F6368; display: block; text-transform: uppercase;">PLAZO</span>
+                            <span style="font-family: 'Google Sans', 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #D93025;">
+                              <span th:text="${expirationDays ?: (dias ?: (company != null and company.pointsExpirationDays != null ? company.pointsExpirationDays : '30'))}">30</span> días
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- INSTRUCCIÓN CLARA -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8F9FA; border-left: 3px solid #D93025; border-radius: 0 12px 12px 0; margin-bottom: 28px;">
+                <tr>
+                  <td style="padding: 14px 18px; font-family: 'Google Sans', 'Inter', sans-serif; font-size: 13px; color: #5F6368; line-height: 1.5;">
+                    <strong style="color: #1F1F1F; display: block; margin-bottom: 2px;">¿Cómo conservar o canjear tus puntos?</strong>
+                    Podés canjearlos por productos en tu próxima visita o renovar la actividad sumando nuevos puntos en cualquier compra.
+                  </td>
+                </tr>
+              </table>
+
+              <!-- BOTÓN PILL PRINCIPAL GOOGLE -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center">
+                    <a th:href="${portalUrl ?: (actionUrl ?: '#')}" class="mobile-button" style="display: inline-block; background-color: #1A73E8; color: #FFFFFF; font-family: 'Google Sans', 'Inter', sans-serif; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 36px; border-radius: 9999px; border: 1px solid #1A73E8; text-align: center; mso-padding-alt: 0;">
+                      <!--[if mso]><i style="letter-spacing: 36px; mso-font-width: -100%; mso-text-raise: 30pt">&nbsp;</i><![endif]-->
+                      <span style="mso-text-raise: 15pt;">Canjear mis puntos ahora</span>
+                      <!--[if mso]><i style="letter-spacing: 36px; mso-font-width: -100%">&nbsp;</i><![endif]-->
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- SEPARADOR -->
+          <tr>
+            <td style="padding: 0 36px;">
+              <div style="border-top: 1px solid #C4C7C5; height: 1px; line-height: 1px; font-size: 1px;">&nbsp;</div>
+            </td>
+          </tr>
+
+          <!-- BLOQUE DE INFORMACIÓN DEL COMERCIO -->
+          <tr>
+            <td class="fluid-padding" style="padding: 24px 36px 28px 36px; background-color: #FFFFFF;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="font-family: 'Google Sans', 'Inter', sans-serif; font-size: 12px; color: #5F6368; line-height: 1.6;">
+                    <strong style="color: #1F1F1F;" th:text="${companyName ?: (empresa ?: (company != null ? company.name : 'Comercio'))}">Comercio</strong><br />
+                    <span th:if="${companyAddress != null or (company != null and company.companyDetails != null)}" th:text="${companyAddress ?: company.companyDetails.address}">Dirección comercial</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- FOOTER INSTITUCIONAL COHERENTE CON LA APP -->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin-top: 28px;">
+          <tr>
+            <td align="center" style="padding: 0 16px; font-family: 'Google Sans', 'Inter', sans-serif; font-size: 12px; line-height: 1.6; color: #5F6368;">
+              <p style="margin: 0 0 6px 0;">
+                Aviso preventivo emitido según la configuración de vencimiento de <strong style="color: #1F1F1F;" th:text="${companyName ?: (empresa ?: (company != null ? company.name : 'este comercio'))}">este comercio</strong>.
+              </p>
+              <p style="margin: 0; font-size: 11px; color: #80868B;">
+                Transformando la relación entre comercios y sus clientes habituales mediante fidelización inteligente.<br />
+                © 2026 <strong>Pointly</strong>. Todos los derechos reservados.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

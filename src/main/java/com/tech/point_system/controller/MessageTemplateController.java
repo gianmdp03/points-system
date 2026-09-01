@@ -1,5 +1,6 @@
 package com.tech.point_system.controller;
 
+import com.tech.point_system._enum.NotificationType;
 import com.tech.point_system.dto.messageTemplate.MessageTemplateDetailDTO;
 import com.tech.point_system.dto.messageTemplate.MessageTemplateListDTO;
 import com.tech.point_system.dto.messageTemplate.MessageTemplateRequestDTO;
@@ -52,6 +53,21 @@ public class MessageTemplateController {
         return ResponseEntity.ok(messageTemplateService.listTemplates(jwt.getSubject(), companyId, pageable));
     }
 
+    @GetMapping("/{companyId}/all")
+    public ResponseEntity<List<MessageTemplateDetailDTO>> getAllTemplates(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long companyId) {
+        return ResponseEntity.ok(messageTemplateService.getAllTemplatesByCompany(jwt.getSubject(), companyId));
+    }
+
+    @GetMapping("/{companyId}/random-preview")
+    public ResponseEntity<MessageTemplateDetailDTO> getRandomActiveTemplatePreview(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long companyId,
+            @RequestParam NotificationType type) {
+        return ResponseEntity.ok(messageTemplateService.getRandomActiveTemplatePreview(jwt.getSubject(), companyId, type));
+    }
+
     @GetMapping("/{companyId}/{id}")
     public ResponseEntity<MessageTemplateDetailDTO> getTemplateById(
             @AuthenticationPrincipal Jwt jwt,
@@ -66,6 +82,24 @@ public class MessageTemplateController {
             @PathVariable Long companyId,
             @PathVariable Long id) {
         messageTemplateService.enableOrDisableTemplate(jwt.getSubject(), companyId, id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{companyId}/{id}/toggle")
+    public ResponseEntity<Void> toggleTemplate(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long companyId,
+            @PathVariable Long id) {
+        messageTemplateService.enableOrDisableTemplate(jwt.getSubject(), companyId, id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{companyId}/{id}/permanent")
+    public ResponseEntity<Void> deleteTemplate(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long companyId,
+            @PathVariable Long id) {
+        messageTemplateService.deleteTemplate(jwt.getSubject(), companyId, id);
         return ResponseEntity.noContent().build();
     }
 

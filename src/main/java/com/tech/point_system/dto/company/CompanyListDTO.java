@@ -16,6 +16,8 @@ public record CompanyListDTO(
         Boolean isPointsExpirationEnabled,
         Integer pointsExpirationDays,
         Boolean isInactiveClientPurgeEnabled,
-        Integer inactiveClientPurgeDays
+        Integer inactiveClientPurgeDays,
+        Boolean isClientRetentionEnabled,
+        Integer clientRetentionDays
 ) {
 }

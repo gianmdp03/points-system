@@ -47,7 +47,7 @@ class MessageTemplateControllerTest {
                 .build();
 
         CompanyListDTO companyDTO = new CompanyListDTO(
-                10L, "Mi Tienda", null, null, null, true, null, false, null, false, null);
+                10L, "Mi Tienda", null, null, null, true, null, false, null, false, null, false, null);
 
         detailDTO = new MessageTemplateDetailDTO(
                 1L, "Bienvenida", NotificationType.WELCOME_NOTIFICATION, "¡Bienvenido a {empresa}!",
@@ -120,5 +120,61 @@ class MessageTemplateControllerTest {
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(messageTemplateService).enableOrDisableTemplate("usr-admin-1", 10L, 1L);
+    }
+
+    @Test
+    void testToggleTemplate() {
+        doNothing().when(messageTemplateService).enableOrDisableTemplate("usr-admin-1", 10L, 1L);
+
+        ResponseEntity<Void> response = messageTemplateController.toggleTemplate(jwt, 10L, 1L);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(messageTemplateService).enableOrDisableTemplate("usr-admin-1", 10L, 1L);
+    }
+
+    @Test
+    void testGetAllTemplates() {
+        when(messageTemplateService.getAllTemplatesByCompany("usr-admin-1", 10L)).thenReturn(List.of(detailDTO));
+
+        ResponseEntity<List<MessageTemplateDetailDTO>> response = messageTemplateController.getAllTemplates(jwt, 10L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().size());
+        assertEquals(detailDTO, response.getBody().get(0));
+        verify(messageTemplateService).getAllTemplatesByCompany("usr-admin-1", 10L);
+    }
+
+    @Test
+    void testGetRandomActiveTemplatePreview() {
+        when(messageTemplateService.getRandomActiveTemplatePreview("usr-admin-1", 10L, NotificationType.WELCOME_NOTIFICATION))
+                .thenReturn(detailDTO);
+
+        ResponseEntity<MessageTemplateDetailDTO> response = messageTemplateController.getRandomActiveTemplatePreview(
+                jwt, 10L, NotificationType.WELCOME_NOTIFICATION);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(detailDTO, response.getBody());
+        verify(messageTemplateService).getRandomActiveTemplatePreview("usr-admin-1", 10L, NotificationType.WELCOME_NOTIFICATION);
+    }
+
+    @Test
+    void testDeleteTemplate() {
+        doNothing().when(messageTemplateService).deleteTemplate("usr-admin-1", 10L, 1L);
+
+        ResponseEntity<Void> response = messageTemplateController.deleteTemplate(jwt, 10L, 1L);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(messageTemplateService).deleteTemplate("usr-admin-1", 10L, 1L);
+    }
+
+    @Test
+    void testResetDefaultTemplates() {
+        when(messageTemplateService.resetDefaultTemplates("usr-admin-1", 10L)).thenReturn(List.of(detailDTO));
+
+        ResponseEntity<List<MessageTemplateDetailDTO>> response = messageTemplateController.resetDefaultTemplates(jwt, 10L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().size());
+        verify(messageTemplateService).resetDefaultTemplates("usr-admin-1", 10L);
     }
 }

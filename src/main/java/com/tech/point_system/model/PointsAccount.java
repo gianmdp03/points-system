@@ -17,6 +17,7 @@ import java.util.Set;
         uniqueConstraints = {@UniqueConstraint(name = "uk_points_account_client_company", columnNames = {"client_id", "company_id"})},
         indexes = {
                 @Index(name = "idx_points_account_company_activity", columnList = "company_id, lastActivityDate"),
+                @Index(name = "idx_points_account_retention", columnList = "company_id, lastActivityDate, lastRetentionNotificationDate"),
                 @Index(name = "idx_points_account_client_id", columnList = "client_id")
         }
 )
@@ -37,6 +38,8 @@ public class PointsAccount {
   private Integer balance = 0;
 
   private OffsetDateTime lastActivityDate;
+
+  private OffsetDateTime lastRetentionNotificationDate;
 
   @OneToMany(mappedBy = "pointsAccount", cascade = CascadeType.ALL, orphanRemoval = true)
   private Set<PointsTransaction> transactions = new HashSet<>();

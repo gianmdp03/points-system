@@ -19,6 +19,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tech.point_system._enum.NotificationType;
+import com.tech.point_system.model.Client;
+import com.tech.point_system.model.PointsAccount;
+import com.tech.point_system.repository.PointsAccountRepository;
+import com.tech.point_system.service.EmailService;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -28,6 +37,8 @@ public class PromotionServiceImpl implements PromotionService {
   private final PromotionMapper promotionMapper;
   private final CompanyAccessValidator companyAccessValidator;
   private final PlanValidatorService planValidatorService;
+  private final PointsAccountRepository pointsAccountRepository;
+  private final EmailService emailService;
 
   @Override
   @Transactional
@@ -41,6 +52,11 @@ public class PromotionServiceImpl implements PromotionService {
     promotion.setCompany(company);
 
     Promotion savedPromotion = promotionRepository.save(promotion);
+
+    if (Boolean.TRUE.equals(savedPromotion.getIsEnabled())) {
+        broadcastPromotionNotification(savedPromotion, company);
+    }
+
     return promotionMapper.toDetailDTO(savedPromotion);
   }
 
@@ -48,12 +64,18 @@ public class PromotionServiceImpl implements PromotionService {
   @Transactional
   @CacheEvict(value = "company_active_promotions", key = "#companyId")
   public PromotionDetailDTO updatePromotion(String companyAdminId, Long companyId, Long id, PromotionUpdateDTO dto) {
-    companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+    Company company = companyAccessValidator.validateAccess(companyId, companyAdminId);
     Promotion promotion = promotionRepository.findByIdAndCompanyId(id, companyId)
             .orElseThrow(() -> new NotFoundException("Promotion not found"));
 
+    boolean wasEnabled = Boolean.TRUE.equals(promotion.getIsEnabled());
     promotionMapper.updateEntityFromDTO(dto, promotion);
     Promotion updatedPromotion = promotionRepository.save(promotion);
+
+    if (!wasEnabled && Boolean.TRUE.equals(updatedPromotion.getIsEnabled())) {
+        broadcastPromotionNotification(updatedPromotion, company);
+    }
+
     return promotionMapper.toDetailDTO(updatedPromotion);
   }
 
@@ -79,10 +101,43 @@ public class PromotionServiceImpl implements PromotionService {
   @Transactional
   @CacheEvict(value = "company_active_promotions", key = "#companyId")
   public void enabledOrDisabled(String companyAdminId, Long companyId, Long id) {
-    companyAccessValidator.checkAccessOnly(companyId, companyAdminId);
+    Company company = companyAccessValidator.validateAccess(companyId, companyAdminId);
     Promotion promotion = promotionRepository.findByIdAndCompanyId(id, companyId)
             .orElseThrow(() -> new NotFoundException("Promotion not found"));
     promotion.setIsEnabled(!promotion.getIsEnabled());
-    promotionRepository.save(promotion);
+    Promotion saved = promotionRepository.save(promotion);
+
+    if (Boolean.TRUE.equals(saved.getIsEnabled())) {
+        broadcastPromotionNotification(saved, company);
+    }
+  }
+
+  private void broadcastPromotionNotification(Promotion promotion, Company company) {
+    List<PointsAccount> clientAccounts = pointsAccountRepository.findClientsForPromotionBroadcast(company.getId());
+    if (clientAccounts.isEmpty()) {
+        return;
+    }
+
+    String multiplierStr = (promotion.getMultiplier() != null) ? promotion.getMultiplier().toString() + "x" : "2x";
+    Map<String, Object> extraParams = new HashMap<>();
+    extraParams.put("promotionName", promotion.getName());
+    extraParams.put("promoName", promotion.getName());
+    extraParams.put("promotionDescription", promotion.getDescription() != null ? promotion.getDescription() : "");
+    extraParams.put("multiplier", multiplierStr);
+    extraParams.put("localName", company.getName());
+    extraParams.put("local", company.getName());
+    extraParams.put("empresa", company.getName());
+
+    for (PointsAccount account : clientAccounts) {
+        Client client = account.getClient();
+        if (client != null && Boolean.TRUE.equals(client.getIsNotificationEnabled()) && client.getEmail() != null && !client.getEmail().isBlank()) {
+            emailService.sendNotificationEmail(
+                    NotificationType.PROMOTION_NOTIFICATION,
+                    company,
+                    client,
+                    extraParams
+            );
+        }
+    }
   }
 }

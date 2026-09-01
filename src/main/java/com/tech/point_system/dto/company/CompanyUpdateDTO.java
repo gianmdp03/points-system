@@ -16,7 +16,9 @@ public record CompanyUpdateDTO(
         Boolean isPointsExpirationEnabled,
         @Positive Integer pointsExpirationDays,
         Boolean isInactiveClientPurgeEnabled,
-        @Positive Integer inactiveClientPurgeDays
+        @Positive Integer inactiveClientPurgeDays,
+        Boolean isClientRetentionEnabled,
+        @Positive Integer clientRetentionDays
 ) {
     @AssertTrue(message = "Si el vencimiento de puntos está habilitado, los días de vencimiento deben ser mayores a 0.")
     public boolean isExpirationDaysValid() {
@@ -30,6 +32,14 @@ public record CompanyUpdateDTO(
     public boolean isInactiveClientPurgeDaysValid() {
         if (Boolean.TRUE.equals(isInactiveClientPurgeEnabled)) {
             return inactiveClientPurgeDays != null && inactiveClientPurgeDays > 0;
+        }
+        return true;
+    }
+
+    @AssertTrue(message = "Si la retención de clientes está habilitada, los días de intervalo deben ser mayores a 0.")
+    public boolean isClientRetentionDaysValid() {
+        if (Boolean.TRUE.equals(isClientRetentionEnabled)) {
+            return clientRetentionDays != null && clientRetentionDays > 0;
         }
         return true;
     }

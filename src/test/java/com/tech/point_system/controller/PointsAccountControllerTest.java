@@ -48,7 +48,7 @@ class PointsAccountControllerTest {
         ClientDetailDTO clientDTO = new ClientDetailDTO(
                 1L, "12345678", "Argentina", "Juan Perez", "juan@test.com", "123456", true);
         CompanyListDTO companyDTO = new CompanyListDTO(
-                10L, "Mi Comercio", null, null, null, true, null, false, null, false, null);
+                10L, "Mi Comercio", null, null, null, true, null, false, null, false, null, false, null);
 
         detailDTO = new PointsAccountDetailDTO(
                 100L, 250, OffsetDateTime.now(ZoneOffset.UTC).minusDays(40), companyDTO, clientDTO);

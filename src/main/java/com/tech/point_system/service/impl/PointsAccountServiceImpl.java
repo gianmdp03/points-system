@@ -31,6 +31,11 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.tech.point_system._enum.NotificationType;
+import com.tech.point_system.service.EmailService;
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -44,6 +49,8 @@ public class PointsAccountServiceImpl implements PointsAccountService {
   private final CompanyAccessValidator companyAccessValidator;
   private final PlanValidatorService planValidatorService;
   private final PromotionRepository promotionRepository;
+  private final RewardRepository rewardRepository;
+  private final EmailService emailService;
 
   @Override
   @Transactional
@@ -69,6 +76,16 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     newAccount.setLastActivityDate(nowUtc);
 
     PointsAccount savedAccount = pointsAccountRepository.save(newAccount);
+
+    if (Boolean.TRUE.equals(client.getIsNotificationEnabled()) && client.getEmail() != null && !client.getEmail().isBlank()) {
+        emailService.sendNotificationEmail(
+                NotificationType.WELCOME_NOTIFICATION,
+                company,
+                client,
+                Map.of("localName", company.getName())
+        );
+    }
+
     return pointsAccountMapper.toDetailDTO(savedAccount);
   }
 
@@ -140,8 +157,12 @@ public class PointsAccountServiceImpl implements PointsAccountService {
       return;
     }
 
-    pointsAccount.setBalance(pointsAccount.getBalance() + pointsToEarn);
+    int previousBalance = pointsAccount.getBalance() != null ? pointsAccount.getBalance() : 0;
+    int newBalance = previousBalance + pointsToEarn;
+
+    pointsAccount.setBalance(newBalance);
     pointsAccount.setLastActivityDate(now);
+    pointsAccount.setLastRetentionNotificationDate(null);
     pointsAccount = pointsAccountRepository.save(pointsAccount);
 
     PointsTransaction transaction = new PointsTransaction();
@@ -158,6 +179,42 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     }
 
     transactionRepository.save(transaction);
+
+    // Evaluación del umbral de cercanía al beneficio (15% faltante = >= 85% de los puntos requeridos alcanzados)
+    if (Boolean.TRUE.equals(event.client().getIsNotificationEnabled()) && event.client().getEmail() != null && !event.client().getEmail().isBlank()) {
+      List<Reward> activeRewards = rewardRepository.findByCompanyIdAndIsEnabledTrue(event.company().getId());
+      for (Reward reward : activeRewards) {
+        if (reward.getCostInPoints() == null || reward.getCostInPoints() <= 0) {
+          continue;
+        }
+        int rewardCost = reward.getCostInPoints();
+        int threshold = (int) Math.ceil(rewardCost * 0.85);
+
+        if (previousBalance < threshold && newBalance >= threshold) {
+          int pointsMissing = Math.max(0, rewardCost - newBalance);
+          Map<String, Object> extraParams = new HashMap<>();
+          extraParams.put("pointsMissing", pointsMissing);
+          extraParams.put("puntos_faltantes", pointsMissing);
+          extraParams.put("rewardName", reward.getName());
+          extraParams.put("rewardDescription", reward.getDescription() != null ? reward.getDescription() : "");
+          extraParams.put("targetPoints", rewardCost);
+          extraParams.put("currentPoints", newBalance);
+          extraParams.put("pointsBalance", newBalance);
+          extraParams.put("puntos", newBalance);
+          extraParams.put("points", newBalance);
+          extraParams.put("localName", event.company().getName());
+          extraParams.put("local", event.company().getName());
+          extraParams.put("empresa", event.company().getName());
+
+          emailService.sendNotificationEmail(
+                  NotificationType.ALMOST_THERE_NOTIFICATION,
+                  event.company(),
+                  event.client(),
+                  extraParams
+          );
+        }
+      }
+    }
 
     log.info("Venta procesada con éxito. Se acreditaron {} puntos (Base: {}, Multiplicador: {}). Vencimiento: {}. Nuevo balance: {}",
             pointsToEarn, basePoints, multiplier, transaction.getExpiresAt(), pointsAccount.getBalance());
@@ -209,6 +266,7 @@ public class PointsAccountServiceImpl implements PointsAccountService {
     account.setBalance(account.getBalance() - event.costInPoints());
     OffsetDateTime nowUtc = OffsetDateTime.now(ZoneOffset.UTC);
     account.setLastActivityDate(nowUtc);
+    account.setLastRetentionNotificationDate(null);
     account = pointsAccountRepository.save(account);
 
     PointsTransaction transaction = new PointsTransaction();
